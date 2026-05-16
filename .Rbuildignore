@@ -1,0 +1,11 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^pixi\.toml$
+^\.pixi$
+^pixi\.lock$
+^bootstrap\.R$
+^CLAUDE\.md$
+^\.claude$
+^specs$
+^reference$
+^LICENSE\.md$

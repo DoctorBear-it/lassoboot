@@ -1,0 +1,10 @@
+specs/
+reference/
+CLAUDE.MD
+/.pixi
+/pixi.lock
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+Rplots.pdf

@@ -1,0 +1,48 @@
+Package: lassoboot
+Title: Parametric Bootstrap for Lasso Regression with Measurement Uncertainty
+Version: 0.0.0.9000
+Authors@R:
+    person("DoctorBear-it", email = "barrett310@gmail.com",
+           role = c("aut", "cre"))
+Description: Tidy parametric bootstrap for lasso regression in the presence of
+    measurement uncertainty. Accepts tidy data frames, a declarative uncertainty
+    specification, derived-quantity definitions, and per-column constraints;
+    returns selection probabilities, stability scores, and bootstrap confidence
+    intervals compatible with dplyr, ggplot2, and broom.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli (>= 3.6),
+    dplyr (>= 1.1),
+    generics,
+    ggplot2 (>= 3.4),
+    glmnet (>= 4.1),
+    Matrix,
+    matrixStats (>= 0.63),
+    purrr (>= 1.0),
+    rlang (>= 1.1),
+    scales,
+    stats,
+    tibble,
+    tidyr (>= 1.3),
+    vctrs (>= 0.6),
+    withr (>= 2.5)
+Suggests:
+    covr,
+    furrr,
+    future,
+    knitr,
+    lintr,
+    lme4 (>= 1.1-30),
+    pkgdown,
+    progressr,
+    rmarkdown,
+    roxygen2 (>= 7.3),
+    styler,
+    testthat (>= 3.0),
+    vdiffr (>= 1.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
