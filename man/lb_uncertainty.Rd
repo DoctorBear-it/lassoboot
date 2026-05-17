@@ -7,18 +7,46 @@
 lb_uncertainty(...)
 }
 \arguments{
-\item{...}{Named arguments of the form \code{column = std(value, source)},
-\code{column = cov(value, source)}, or \code{column = rel(value, source)}.
-Alternatively, supply a pre-built tibble with columns \code{term}, \code{type},
-\code{value}, and optionally \code{source}.}
+\item{...}{Named arguments \code{column = std(value)}, \code{column = cov(value)}, or
+\code{column = rel(value)}. Alternatively, a single pre-built tibble with
+columns \code{term}, \code{type}, \code{value}, and optionally \code{source}.}
 }
 \value{
-A tibble with columns \code{term} (chr), \code{type} (chr: "std"/"cov"/"rel"),
-\code{value} (dbl, >= 0), \code{source} (chr, optional documentation).
+A tibble with columns \code{term} (chr), \code{type} (chr: \code{"std"/"cov"/"rel"}),
+\code{value} (dbl, >= 0), \code{source} (chr).
 }
 \description{
 Builds a tidy tibble declaring the measurement uncertainty on predictor
-columns. Each column's uncertainty is expressed as an absolute standard
-deviation (\code{std}), a coefficient of variation in percent (\code{cov}), or a
-relative standard deviation as a fraction (\code{rel}).
+columns. Use the helper constructors \code{std()}, \code{cov()}, and \code{rel()} as values
+inside the call.
+}
+\details{
+\subsection{Helper constructors}{
+
+Inside \code{lb_uncertainty(...)} calls, three short helpers are available:
+\itemize{
+\item \code{std(value, source)} — absolute standard deviation in the units of the
+column.
+\item \code{cov(value, source)} — coefficient of variation as a \strong{percentage}
+(\code{cov(4.0, ...)} means 4\%, not 400\%).
+\item \code{rel(value, source)} — relative standard deviation as a \strong{fraction}
+(\code{rel(0.04, ...)} is equivalent to \code{cov(4.0, ...)}).
+}
+
+These helpers are \strong{only available inside \code{lb_uncertainty()}} — they do not
+appear in the package namespace and do not shadow \code{stats::cov()} or any
+other function globally. Internally, \code{lb_uncertainty()} evaluates its
+arguments in a child environment that defines \code{std}, \code{cov}, and \code{rel};
+outside that call, the names resolve normally.
+}
+
+\subsection{Example}{
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{lb_uncertainty(
+  alumina  = std(0.071, "ASTM C114"),
+  SSA      = cov(0.56,  "Mfr certificate of analysis"),
+  strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
+)
+}\if{html}{\out{</div>}}
+}
 }

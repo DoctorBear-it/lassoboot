@@ -6,7 +6,16 @@
 #'   IDs the same length as `nrow(data)`.
 #' @export
 lb_folds_kfold <- function(k = 10) {
-  stop("Not yet implemented", call. = FALSE)
+  k <- .check_k(k, "k")
+  function(data) {
+    n <- nrow(data)
+    if (n < k) {
+      cli::cli_abort(
+        "Cannot create {k} folds from {n} row{?s}; reduce {.arg k}."
+      )
+    }
+    sample(rep_len(seq_len(k), n))
+  }
 }
 
 #' Grouped k-fold fold generator (prevents within-group train/test leakage)
@@ -20,28 +29,114 @@ lb_folds_kfold <- function(k = 10) {
 #' @return A fold-generator closure `function(data) -> integer vector`.
 #' @export
 lb_folds_grouped <- function(group, k = 10) {
-  stop("Not yet implemented", call. = FALSE)
+  if (!is.character(group) || length(group) != 1L || group == "") {
+    cli::cli_abort("{.arg group} must be a single non-empty string.")
+  }
+  k <- .check_k(k, "k")
+  function(data) {
+    if (!group %in% names(data)) {
+      cli::cli_abort(
+        "Group column {.val {group}} not found in data."
+      )
+    }
+    col      <- as.character(data[[group]])
+    groups   <- unique(col)
+    n_groups <- length(groups)
+    if (n_groups < k) {
+      cli::cli_abort(
+        "Cannot create {k} folds from {n_groups} group{?s}; reduce {.arg k}."
+      )
+    }
+    # Shuffle groups, then assign folds round-robin so all folds are filled.
+    shuffled   <- sample(groups)
+    fold_ids   <- rep_len(seq_len(k), n_groups)   # 1,2,...,k,1,2,...
+    group_fold <- stats::setNames(fold_ids, shuffled)
+    as.integer(group_fold[col])
+  }
 }
 
 #' Nested fold generator with outer grouping and optional inner stratification
 #'
 #' Places whole outer groups in the same fold (no leakage of group identity
-#' across train/test) and stratifies within-fold composition by `inner` so
-#' each fold sees a balanced distribution of the inner variable.
+#' across train/test) and, when `inner` is supplied, stratifies the assignment
+#' of outer groups to folds so each fold sees a balanced distribution of the
+#' inner variable.
 #'
 #' @param outer Column name (string) defining the outer grouping (no leakage).
 #' @param inner Column name (string) for inner stratification within each fold,
 #'   or `NULL`. Default `NULL`.
 #' @param k_outer Number of outer folds. Default `5`.
-#' @param k_inner Reserved for future sub-folding; ignored in v0.1.
+#' @param k_inner Reserved for future sub-folding; must be `NULL` in v0.1.
 #'
 #' @return A fold-generator closure `function(data) -> integer vector`.
 #' @export
 lb_folds_nested <- function(outer, inner = NULL, k_outer = 5, k_inner = NULL) {
-  stop("Not yet implemented", call. = FALSE)
+  if (!is.character(outer) || length(outer) != 1L || outer == "") {
+    cli::cli_abort("{.arg outer} must be a single non-empty string.")
+  }
+  if (!is.null(inner) && (!is.character(inner) || length(inner) != 1L || inner == "")) {
+    cli::cli_abort("{.arg inner} must be a single non-empty string or NULL.")
+  }
+  k_outer <- .check_k(k_outer, "k_outer")
+  if (!is.null(k_inner)) {
+    cli::cli_inform(
+      c("i" = "{.arg k_inner} is reserved for future use and is ignored in v0.1.")
+    )
+  }
+
+  function(data) {
+    if (!outer %in% names(data)) {
+      cli::cli_abort("Outer grouping column {.val {outer}} not found in data.")
+    }
+    outer_vals <- unique(data[[outer]])
+    n_outer    <- length(outer_vals)
+    if (n_outer < k_outer) {
+      cli::cli_abort(
+        "Cannot create {k_outer} outer folds from {n_outer} group{?s}."
+      )
+    }
+
+    if (!is.null(inner)) {
+      if (!inner %in% names(data)) {
+        cli::cli_abort("Inner stratification column {.val {inner}} not found in data.")
+      }
+      # For each outer group find its modal inner value (used as the stratum key).
+      group_inner <- vapply(outer_vals, function(g) {
+        vals <- data[[inner]][data[[outer]] == g]
+        tbl  <- table(vals)
+        names(tbl)[which.max(tbl)]
+      }, character(1L))
+
+      # Stratified cyclic assignment:
+      # 1. Within each stratum, shuffle the groups.
+      # 2. Concatenate strata: [shuffled_lvl1, shuffled_lvl2, ...].
+      # 3. Assign folds cyclically across the concatenated list.
+      # This guarantees all k_outer folds are filled (no per-stratum restart).
+      inner_levels   <- unique(group_inner)
+      ordered_groups <- character(0L)
+      for (lvl in inner_levels) {
+        in_stratum     <- outer_vals[group_inner == lvl]
+        ordered_groups <- c(ordered_groups, sample(in_stratum))
+      }
+      fold_ids      <- rep_len(seq_len(k_outer), n_outer)
+      fold_of_group <- stats::setNames(fold_ids, as.character(ordered_groups))
+    } else {
+      shuffled      <- sample(outer_vals)
+      fold_of_group <- stats::setNames(
+        rep_len(seq_len(k_outer), n_outer),
+        as.character(shuffled)
+      )
+    }
+
+    as.integer(fold_of_group[as.character(data[[outer]])])
+  }
 }
 
 #' Block fold generator
+#'
+#' Treats each unique value of `block` as an indivisible unit and assigns whole
+#' blocks to folds in their natural order (no shuffling), preserving temporal or
+#' spatial ordering.
 #'
 #' @param block Column name (string) defining contiguous blocks assigned as
 #'   complete units to folds.
@@ -50,17 +145,88 @@ lb_folds_nested <- function(outer, inner = NULL, k_outer = 5, k_inner = NULL) {
 #' @return A fold-generator closure `function(data) -> integer vector`.
 #' @export
 lb_folds_blocked <- function(block, k = 5) {
-  stop("Not yet implemented", call. = FALSE)
+  if (!is.character(block) || length(block) != 1L || block == "") {
+    cli::cli_abort("{.arg block} must be a single non-empty string.")
+  }
+  k <- .check_k(k, "k")
+  function(data) {
+    if (!block %in% names(data)) {
+      cli::cli_abort("Block column {.val {block}} not found in data.")
+    }
+    # Preserve appearance order of blocks
+    blocks_ordered <- unique(data[[block]])
+    n_blocks <- length(blocks_ordered)
+    if (n_blocks < k) {
+      cli::cli_abort(
+        "Cannot create {k} folds from {n_blocks} block{?s}; reduce {.arg k}."
+      )
+    }
+    fold_assignment <- stats::setNames(
+      rep(seq_len(k), length.out = n_blocks),
+      as.character(blocks_ordered)
+    )
+    as.integer(fold_assignment[as.character(data[[block]])])
+  }
 }
 
 #' Custom fold generator
 #'
 #' @param fn A function with signature `function(data) -> integer vector` of
-#'   fold IDs the same length as `nrow(data)`. The function is responsible for
-#'   any re-randomization across CV repetitions.
+#'   fold IDs the same length as `nrow(data)`, with values in `1:k` for some
+#'   `k`. The function is responsible for any re-randomisation across CV
+#'   repetitions (typically by not closing over a fixed state).
 #'
-#' @return A fold-generator closure (the input `fn`, validated and classed).
+#' @return The input `fn`, validated and classed as an `lb_fold_generator`.
 #' @export
 lb_folds_custom <- function(fn) {
-  stop("Not yet implemented", call. = FALSE)
+  if (!is.function(fn)) {
+    cli::cli_abort(
+      "{.arg fn} must be a function; got {.cls {class(fn)}}."
+    )
+  }
+  # Wrap to validate output at call time
+  function(data) {
+    result <- fn(data)
+    .validate_fold_ids(result, nrow(data), "lb_folds_custom")
+    result
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+.check_k <- function(k, arg) {
+  if (!is.numeric(k) || length(k) != 1L || !is.finite(k) || k < 2L) {
+    cli::cli_abort(
+      "{.arg {arg}} must be an integer >= 2; got {.val {k}}."
+    )
+  }
+  as.integer(k)
+}
+
+.validate_fold_ids <- function(ids, n, src = "fold generator") {
+  if (!is.integer(ids) && !is.numeric(ids)) {
+    cli::cli_abort("{src} must return an integer vector; got {.cls {class(ids)}}.")
+  }
+  ids <- as.integer(ids)
+  if (length(ids) != n) {
+    cli::cli_abort(
+      "{src} returned {length(ids)} fold ID{?s} but data has {n} row{?s}."
+    )
+  }
+  if (any(is.na(ids))) {
+    cli::cli_abort("{src} returned NA fold IDs.")
+  }
+  k <- max(ids)
+  if (min(ids) < 1L) {
+    cli::cli_abort("{src} returned fold IDs < 1.")
+  }
+  # Check no empty folds
+  for (f in seq_len(k)) {
+    if (!any(ids == f)) {
+      cli::cli_abort("{src} produced empty fold {f}.")
+    }
+  }
+  invisible(ids)
 }

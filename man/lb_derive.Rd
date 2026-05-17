@@ -8,15 +8,18 @@ lb_derive(...)
 }
 \arguments{
 \item{...}{A single named expression \code{lhs = rhs}. \code{lhs} is the column name
-to create or overwrite; \code{rhs} is an expression evaluated in the perturbed
-data frame via \code{rlang::eval_tidy()}. Derives run in declaration order, so
-they may chain (\code{volume_total = volume_A + volume_B}).}
+to create or overwrite in the perturbed data frame; \code{rhs} is an expression
+evaluated via \code{\link[rlang:eval_tidy]{rlang::eval_tidy()}} in the context of that data frame.}
 }
 \value{
-An \code{lb_derive} object (a named quosure).
+An \code{lb_derive} object (a classed list with \verb{$name} and \verb{$expr}).
 }
 \description{
 Derived quantities (e.g. \code{volume = mass / density}) must be recomputed
 \emph{after} uncertainty injection and constraint clipping so that measurement
 error propagates correctly through the derived value.
+}
+\details{
+Derives run in declaration order and may chain: a second derive may reference
+a column produced by the first.
 }

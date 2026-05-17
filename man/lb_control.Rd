@@ -22,7 +22,7 @@ lb_control(
 }
 \arguments{
 \item{lambda}{Lambda selection method: \code{"repeated_cv"} (default), \code{"min"},
-\code{"1se"}, or a positive numeric value.}
+\code{"1se"}, or a single positive numeric value.}
 
 \item{cv_folds}{Number of CV folds. Default \code{10L}.}
 
@@ -35,14 +35,16 @@ iteration? Default \code{TRUE}.}
 \item{store_path}{Logical. Store the full coefficient path per iteration,
 enabling stability diagnostics? Default \code{TRUE}.}
 
-\item{n_lambda}{Number of lambda values in the stored path. Default \code{50L}.}
+\item{n_lambda}{Number of lambda values in the stored path. Passed as
+\code{nlambda} to the engine's \code{cv()} method. Default \code{50L}.}
 
 \item{keep_models}{Logical. Store the engine fit object for every iteration?
 Off by default; only needed for per-model diagnostics. Default \code{FALSE}.}
 
 \item{sigma_method}{Residual SE estimation method: \code{"refit"} (default —
-OLS on selected variables, closes the under-coverage gap), \code{"naive"}
-(matches prototype, biased low), or \code{"cv"} (out-of-fold, slow but honest).}
+OLS on selected variables, closes the under-coverage gap from
+regularisation-shrunk residuals), \code{"naive"} (matches prototype, biased
+low under regularisation), or \code{"cv"} (out-of-fold, slow but most honest).}
 
 \item{parallel}{Logical. Use \code{future}/\code{furrr} for parallelism? Errors
 helpfully if those packages are absent. Default \code{FALSE}.}
@@ -50,8 +52,13 @@ helpfully if those packages are absent. Default \code{FALSE}.}
 \item{progress}{Logical. Show a \code{cli}-style progress bar? Default
 \code{interactive()}.}
 
-\item{seed}{Integer seed for reproducibility, or \code{NULL} for random. Applied
-via \code{withr::with_seed()}. Default \code{NULL}.}
+\item{seed}{Integer seed for reproducibility, or \code{NULL}. When \code{NULL},
+\code{\link[=lb_bootstrap]{lb_bootstrap()}} generates a random integer seed at invocation time via
+\code{sample.int(.Machine$integer.max, 1)} and stores it on the returned
+\code{lb_boot} object's \verb{$seed} field. This makes every run reproducible after
+the fact even when no seed was explicitly set. When an integer is supplied,
+that exact seed is used and stored. The bootstrap runs under
+\code{withr::with_seed()}. Default \code{NULL}.}
 
 \item{intercept}{Logical. Fit intercept? Passed to the engine. Default \code{TRUE}.}
 
@@ -60,7 +67,8 @@ Default \code{TRUE}.}
 }
 \value{
 An \code{lb_control} object (a validated, classed list). The print method
-shows only non-default values.
+shows only non-default values; prints \verb{<lb_control: all defaults>} when
+every argument is at its default.
 }
 \description{
 Set tuning parameters for the bootstrap

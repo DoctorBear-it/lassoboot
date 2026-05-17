@@ -12,8 +12,12 @@ Use \code{c(0, Inf)} for non-negative, \code{c(0, 100)} for weight percent,
 \code{c(-Inf, Inf)} to disable clipping for signed quantities.}
 }
 \value{
-An \code{lb_constraints} object (a named list of numeric length-2 vectors).
+An \code{lb_constraints} object (a named list of numeric length-2
+vectors).
 }
 \description{
-Specify per-column clipping constraints for bootstrap perturbation
+Each named argument is a length-2 numeric vector \code{c(lower, upper)} giving
+the allowable range for that column after uncertainty injection. A column not
+listed receives an inferred default at \code{\link[=lb_spec]{lb_spec()}} time: \code{c(0, Inf)} if all
+observed values are \verb{>= 0}, otherwise \code{c(-Inf, Inf)}.
 }

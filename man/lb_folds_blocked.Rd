@@ -16,5 +16,7 @@ complete units to folds.}
 A fold-generator closure \verb{function(data) -> integer vector}.
 }
 \description{
-Block fold generator
+Treats each unique value of \code{block} as an indivisible unit and assigns whole
+blocks to folds in their natural order (no shuffling), preserving temporal or
+spatial ordering.
 }

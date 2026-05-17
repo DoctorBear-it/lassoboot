@@ -8,11 +8,12 @@ lb_folds_custom(fn)
 }
 \arguments{
 \item{fn}{A function with signature \verb{function(data) -> integer vector} of
-fold IDs the same length as \code{nrow(data)}. The function is responsible for
-any re-randomization across CV repetitions.}
+fold IDs the same length as \code{nrow(data)}, with values in \code{1:k} for some
+\code{k}. The function is responsible for any re-randomisation across CV
+repetitions (typically by not closing over a fixed state).}
 }
 \value{
-A fold-generator closure (the input \code{fn}, validated and classed).
+The input \code{fn}, validated and classed as an \code{lb_fold_generator}.
 }
 \description{
 Custom fold generator

@@ -14,13 +14,14 @@ or \code{NULL}. Default \code{NULL}.}
 
 \item{k_outer}{Number of outer folds. Default \code{5}.}
 
-\item{k_inner}{Reserved for future sub-folding; ignored in v0.1.}
+\item{k_inner}{Reserved for future sub-folding; must be \code{NULL} in v0.1.}
 }
 \value{
 A fold-generator closure \verb{function(data) -> integer vector}.
 }
 \description{
 Places whole outer groups in the same fold (no leakage of group identity
-across train/test) and stratifies within-fold composition by \code{inner} so
-each fold sees a balanced distribution of the inner variable.
+across train/test) and, when \code{inner} is supplied, stratifies the assignment
+of outer groups to folds so each fold sees a balanced distribution of the
+inner variable.
 }

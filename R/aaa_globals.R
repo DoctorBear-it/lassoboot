@@ -1,3 +1,4 @@
 utils::globalVariables(c(
-  # NSE bare column names — populated as they are added in later phases
+  # Phase 2 — no dplyr NSE bare names introduced yet; all column access
+  # in constraints/derive/folds uses [[ ]] string subscripting.
 ))

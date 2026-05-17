@@ -7,8 +7,8 @@
 lb_engine_glmnet()
 }
 \value{
-An object of class \code{c("lb_engine_glmnet", "lb_engine")}: a list
-with methods \code{fit}, \code{predict}, \code{coef}, \code{cv}, and \code{sigma}.
+An object of class \code{c("lb_engine_glmnet", "lb_engine")}: a named
+list with five methods: \code{fit}, \code{predict}, \code{coef}, \code{cv}, and \code{sigma}.
 }
 \description{
 The default engine. Wraps \code{glmnet::glmnet} and \code{glmnet::cv.glmnet} behind
