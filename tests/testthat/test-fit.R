@@ -26,7 +26,7 @@ test_that("lb_fit returns lb_fit with required fields", {
                        "cv_results", "sigma_hat", "x", "y"))
   expect_true(is.numeric(fit$lambda) && length(fit$lambda) == 1L && fit$lambda > 0)
   expect_true(is.numeric(fit$sigma_hat) && length(fit$sigma_hat) == 1L && fit$sigma_hat > 0)
-  expect_true(inherits(fit$x, "Matrix"))
+  expect_s4_class(fit$x, "dgCMatrix")
   expect_true(is.numeric(fit$y))
   expect_equal(length(fit$y), 40L)
 })

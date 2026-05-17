@@ -2,6 +2,23 @@
 # Functions here are not exported; place any bare column name references used
 # via NSE in aaa_globals.R to silence R CMD CHECK "no visible binding" notes.
 
+# Build a sparse predictor matrix for prediction from a response-stripped
+# `terms` object. Used by predict.lb_boot() so that newdata (which has no
+# response column) can be passed without model.frame() erroring.
+#
+# pred_terms: a `terms` object with the response already removed via
+#   stats::delete.response(). Must carry the same predictor terms as the
+#   original fit formula.
+# data      : the newdata frame; need not contain the response column.
+# Returns   : a dgCMatrix of shape n x p (no intercept, same as .build_design_matrix).
+.build_predictor_matrix <- function(pred_terms, data) {
+  mf <- stats::model.frame(pred_terms, data = data,
+                            na.action = stats::na.pass)
+  term_labels <- attr(pred_terms, "term.labels")
+  rhs_no_int  <- stats::reformulate(term_labels, intercept = FALSE)
+  Matrix::sparse.model.matrix(rhs_no_int, data = mf)
+}
+
 # Build a sparse predictor matrix and extract the response vector from a
 # formula and data frame. Called by both lb_fit() and .boot_iter() so the
 # formula-to-sparse-matrix logic is never duplicated.

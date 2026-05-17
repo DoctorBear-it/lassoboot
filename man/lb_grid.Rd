@@ -9,7 +9,8 @@ lb_grid(boot, focal, n = 100, at = "observed", extrapolate = FALSE)
 \arguments{
 \item{boot}{An \code{lb_boot} object.}
 
-\item{focal}{Name of the focal (x-axis) predictor (string).}
+\item{focal}{Name of the focal (x-axis) predictor (string). Must be a column
+name in the original data, not a formula term.}
 
 \item{n}{Number of grid points along the focal axis. Default \code{100}.}
 
@@ -17,7 +18,7 @@ lb_grid(boot, focal, n = 100, at = "observed", extrapolate = FALSE)
 unique observed combinations), \code{"median"}, or a named list of values.}
 
 \item{extrapolate}{Logical. Allow grid points outside the observed focal
-range for each non-focal combination? User must opt in. Default \code{FALSE}.}
+range? User must opt in. Default \code{FALSE}.}
 }
 \value{
 A tibble with the grid columns plus \code{.fitted}, \code{.lower}, \code{.upper}.
@@ -27,4 +28,10 @@ Constructs a grid of \code{n} values along the focal predictor's range, crossed
 with non-focal predictors fixed at their observed combinations (default),
 medians, or user-supplied values. Passes the grid to \code{\link[=predict.lb_boot]{predict.lb_boot()}} and
 returns \code{.fitted}, \code{.lower}, \code{.upper}.
+}
+\details{
+The grid is built in \strong{raw-data column space} (the columns of \code{spec$data}).
+Formula transformations such as \code{I(x^2)}, \code{log(x)}, and interaction
+expansion are applied at predict-time via the formula. \code{focal} must be a
+column name present in \code{spec$data}, not a formula term like \code{"I(clayHOH^2)"}.
 }

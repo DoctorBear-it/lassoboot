@@ -15,6 +15,8 @@
 A one-row tibble: \code{n}, \code{B}, \code{lambda}, \code{lambda_mad},
 \code{mean_n_selected}, \code{sd_n_selected}, \code{dev_ratio}, \code{elapsed_sec},
 \code{sigma_method}, \code{fold_spec}.
+\code{lambda_mad} is \code{NA} when \code{fix_lambda = TRUE} (all iterations share the
+same lambda; the MAD would be zero and is uninformative).
 }
 \description{
 Model-level bootstrap summary

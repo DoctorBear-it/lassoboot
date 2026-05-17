@@ -42,17 +42,30 @@ lb_engine_glmnet <- function() {
       },
 
       # ----------------------------------------------------------------- coef
-      # Extract the coefficient vector at a given lambda.
-      # Returns a named numeric vector (including intercept).
+      # Extract coefficients at one or more lambda values.
+      #
+      # scalar s (length 1): returns a named numeric vector of length p+1
+      #   (intercept first). Preserving names is required: coef_tbl term
+      #   labels and sigma refit both rely on coefficient names matching
+      #   design-matrix column names plus "(Intercept)".
+      #
+      # vector s (length > 1): returns the raw dgCMatrix from
+      #   stats::coef(fit, s = s), shape (p+1) x length(s), rownames =
+      #   design-matrix columns + "(Intercept)". Used by .boot_iter() for
+      #   path storage so that stability diagnostics see a consistent grid.
+      #   No numeric coercion — callers consume it as a sparse matrix.
       coef = function(fit, s = NULL, ...) {
         s  <- s %||% fit$lambda[1L]
         cf <- stats::coef(fit, s = s, ...)
-        # coef.glmnet returns a (p+1) x 1 dgCMatrix; coerce to named numeric.
-        # Preserving names is required: coef_tbl term labels and sigma refit
-        # both rely on coefficient names matching design-matrix column names.
-        nms  <- rownames(cf)
-        vals <- as.numeric(cf)
-        if (!is.null(nms)) stats::setNames(vals, nms) else vals
+        if (length(s) == 1L) {
+          # Scalar path: coerce (p+1) x 1 dgCMatrix to named numeric vector
+          nms  <- rownames(cf)
+          vals <- as.numeric(cf)
+          if (!is.null(nms)) stats::setNames(vals, nms) else vals
+        } else {
+          # Vector path: return (p+1) x length(s) dgCMatrix as-is
+          cf
+        }
       },
 
       # ------------------------------------------------------------------ cv

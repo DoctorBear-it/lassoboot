@@ -38,6 +38,7 @@ Suggests:
     lintr,
     lme4 (>= 1.1-30),
     pkgdown,
+    reformulas,
     progressr,
     rmarkdown,
     roxygen2 (>= 7.3),

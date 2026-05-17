@@ -170,8 +170,9 @@ lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
                         intercept   = control$intercept,
                         standardize = control$standardize)
     coefs_b      <- engine$coef(fit_b, s = lambda_b)
-    # Full path: (p+1) x n_lambda sparse matrix; rows named by predictor
-    path_coefs_b <- stats::coef(fit_b, s = fit$lambda_path)
+    # Full path: (p+1) x n_lambda sparse matrix; rows named by predictor.
+    # engine$coef with vector s returns a raw dgCMatrix (CF#2).
+    path_coefs_b <- engine$coef(fit_b, s = fit$lambda_path)
   } else {
     fit_b <- engine$fit(x_b, y_star,
                         lambda      = lambda_b,

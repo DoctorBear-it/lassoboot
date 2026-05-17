@@ -7,15 +7,31 @@
 lb_stability(boot)
 }
 \arguments{
-\item{boot}{An \code{lb_boot} object with \code{store_path = TRUE}.}
+\item{boot}{An \code{lb_boot} object.}
 }
 \value{
-A tibble with one row per term: \code{term}, \code{max_selection_prob},
-\code{lambda_range}, and related stability diagnostics.
+A tibble with one row per non-intercept term:
+\itemize{
+\item \code{term}: predictor name.
+\item \code{max_selection_prob}: maximum selection probability across all lambda
+values in the stored path.
+\item \code{lambda_at_max}: the lambda value where \code{max_selection_prob} is achieved.
+\item \code{lambda_range_low}: smallest lambda value at which selection probability
+exceeds 0.5, or \code{NA} if the term never reaches 0.5.
+\item \code{lambda_range_high}: largest lambda value at which selection probability
+exceeds 0.5, or \code{NA} if the term never reaches 0.5.
+\item \code{n_lambda_above_half}: number of lambda grid points at which selection
+probability exceeds 0.5.
+}
 }
 \description{
 Summarises each term's selection probability trajectory across the lambda
-path: the maximum selection probability, the lambda range over which
-selection probability exceeds 0.5, and related diagnostics. This is the
-source of the \code{stability_score} column in \code{\link[=tidy.lb_boot]{tidy.lb_boot()}}.
+path: the maximum selection probability, the lambda value at which that
+maximum is achieved, the lambda range over which selection probability
+exceeds 0.5, and the count of lambda values above that threshold.
+}
+\details{
+When \code{store_path = FALSE} was used in \code{lb_control()}, \code{path_coefs} is not
+available and \code{stability_score} falls back to the point-lambda selection
+probability (same as \code{selection_prob} in \code{\link[=tidy.lb_boot]{tidy.lb_boot()}}).
 }

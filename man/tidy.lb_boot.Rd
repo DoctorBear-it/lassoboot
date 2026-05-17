@@ -21,6 +21,7 @@ per Gelman 2008, placing all numeric predictors on a comparable axis).}
 A tibble with columns: \code{term}, \code{estimate} (bootstrap mean over all
 B iterations, zeros included), \code{estimate_median}, \code{std.error}, \code{conf.low},
 \code{conf.high}, \code{selection_prob}, \code{n_selected}, \code{stability_score}.
+\code{(Intercept)} is dropped.
 }
 \description{
 Tidy bootstrap coefficients into a one-row-per-term tibble

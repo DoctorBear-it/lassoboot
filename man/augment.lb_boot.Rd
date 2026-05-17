@@ -4,7 +4,7 @@
 \alias{augment.lb_boot}
 \title{Augment data with bootstrap fitted values and prediction intervals}
 \usage{
-\method{augment}{lb_boot}(x, newdata = NULL, ...)
+\method{augment}{lb_boot}(x, newdata = NULL, level = 0.95, ...)
 }
 \arguments{
 \item{x}{An \code{lb_boot} object.}
@@ -12,11 +12,15 @@
 \item{newdata}{A data frame for out-of-sample augmentation, or \code{NULL} to
 use training data. Default \code{NULL}.}
 
+\item{level}{Confidence level for the prediction interval. Default \code{0.95}.}
+
 \item{...}{Unused; for S3 compatibility.}
 }
 \value{
 The (new)data tibble augmented with \code{.fitted}, \code{.lower}, \code{.upper}.
 }
 \description{
-Augment data with bootstrap fitted values and prediction intervals
+Returns the data (training or new) augmented with \code{.fitted}, \code{.lower}, and
+\code{.upper} columns from the bootstrap coefficient distribution at \code{level}
+confidence.
 }
