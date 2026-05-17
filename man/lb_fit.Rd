@@ -10,9 +10,22 @@ lb_fit(spec)
 \item{spec}{An \code{lb_spec} object from \code{\link[=lb_spec]{lb_spec()}}.}
 }
 \value{
-An \code{lb_fit} object containing the parent \code{lb_spec}, engine fit
-object, selected lambda scalar, lambda path vector, CV results, and
-residual sigma estimate(s).
+An \code{lb_fit} object containing:
+\itemize{
+\item \code{spec}: the parent \code{lb_spec} (stored in full; \code{lb_fit} is self-contained).
+\item \code{fit_obj}: the engine fit object at the selected lambda.
+\item \code{lambda}: selected lambda scalar.
+\item \code{lambda_path}: lambda grid from the last CV run (used in path storage
+during bootstrap; see \code{lb_control(store_path)}).
+\item \code{cv_results}: reduced named list from \code{engine$cv()} —
+\code{lambda.min}, \code{lambda.1se}, \code{lambda_path}, \code{cvm}. Not a full
+\code{cv.glmnet} object; \code{glance()} in Phase 4 uses this for fold_spec output.
+\item \code{sigma_hat}: residual SE scalar (method from \code{control$sigma_method}).
+\item \code{x}: original sparse design matrix (n x p). Stored here so the bootstrap
+loop can reuse it for generating y_star without rebuilding from spec$data
+each iteration (O(n*p) allocation saved per iteration).
+\item \code{y}: original response vector (length n). Companion to \code{x}.
+}
 }
 \description{
 Builds the design matrix, runs (repeated) cross-validation to select lambda,

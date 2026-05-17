@@ -17,9 +17,24 @@ large bootstrap run.}
 \item{...}{Additional arguments passed to the engine.}
 }
 \value{
-An \code{lb_boot} object containing the parent \code{lb_fit}, a tidy
-coefficient tibble (B x p_selected rows), optional full-path coefficient
-matrix, optional stored fit objects, the effective seed, and timings.
+An \code{lb_boot} object containing:
+\itemize{
+\item \code{fit}: the parent \code{lb_fit} (stored in full; \code{lb_boot} is self-contained).
+\item \code{coef_tbl}: tibble of nonzero coefficients — columns \code{iteration} (int),
+\code{term} (chr), \code{estimate} (dbl). Zeros are dropped to save memory; a term
+absent from iteration \code{b} has an implicit coefficient of 0 in that
+iteration. \code{B} is stored separately for correct selection-probability
+computation in \code{tidy()}.
+\item \code{B}: total number of iterations (not \code{max(coef_tbl$iteration)}, which
+would undercount if the last iteration selects no variables).
+\item \code{path_coefs}: list of length \code{B} of sparse coefficient matrices
+\verb{(p+1) x n_lambda}, or \code{NULL} when \code{control$store_path = FALSE}.
+\item \code{models}: list of length \code{B} of engine fit objects, or \code{NULL} when
+\code{control$keep_models = FALSE}.
+\item \code{seed_used}: integer seed used for this run (always set, even when
+\code{control$seed} was \code{NULL} — generated randomly then stored).
+\item \code{elapsed_sec}: wall-clock seconds for the bootstrap loop.
+}
 }
 \description{
 For each of \code{B} iterations: perturbs predictors using the declared

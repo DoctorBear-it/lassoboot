@@ -145,9 +145,21 @@ test_that("engine$cv() errors on invalid lambda vector", {
 
 # ---- engine$sigma() ---------------------------------------------------------
 
-test_that("engine$sigma() errors with 'not yet implemented'", {
+test_that("engine$sigma() returns a positive numeric for each method", {
+  xy     <- make_xy()
+  eng    <- lb_engine_glmnet()
+  fit    <- eng$fit(xy$x, xy$y, lambda = 0.05)
+  foldid <- sample(rep_len(1:5, nrow(xy$x)))
+
+  expect_gt(eng$sigma(fit, xy$x, xy$y, method = "refit"), 0)
+  expect_gt(eng$sigma(fit, xy$x, xy$y, method = "naive"), 0)
+  expect_gt(eng$sigma(fit, xy$x, xy$y, method = "cv", foldid = foldid), 0)
+})
+
+test_that("engine$sigma() errors on unknown method", {
   xy  <- make_xy()
   eng <- lb_engine_glmnet()
   fit <- eng$fit(xy$x, xy$y, lambda = 0.05)
-  expect_error(eng$sigma(fit, xy$x, xy$y), class = "rlang_error")
+  # match.arg() throws a base simpleError (not rlang_error) for invalid choices
+  expect_error(eng$sigma(fit, xy$x, xy$y, method = "bad"))
 })

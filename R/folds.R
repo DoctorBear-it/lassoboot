@@ -100,12 +100,30 @@ lb_folds_nested <- function(outer, inner = NULL, k_outer = 5, k_inner = NULL) {
       if (!inner %in% names(data)) {
         cli::cli_abort("Inner stratification column {.val {inner}} not found in data.")
       }
-      # For each outer group find its modal inner value (used as the stratum key).
-      group_inner <- vapply(outer_vals, function(g) {
-        vals <- data[[inner]][data[[outer]] == g]
-        tbl  <- table(vals)
-        names(tbl)[which.max(tbl)]
-      }, character(1L))
+      # Require each outer group to have exactly one unique inner value.
+      # Mixed-stratum groups are not supported: stratification on a modal inner
+      # value would silently collapse all mixed groups to the same stratum,
+      # defeating the purpose of inner stratification.
+      outer_col <- data[[outer]]
+      inner_col <- data[[inner]]
+      for (g in outer_vals) {
+        inner_for_g <- unique(inner_col[outer_col == g])
+        if (length(inner_for_g) > 1L) {
+          cli::cli_abort(c(
+            "Outer group {.val {g}} contains multiple inner values \\
+             ({.val {as.character(inner_for_g)}}).",
+            "i" = "Nested fold stratification requires one inner value per \\
+                   outer group.",
+            "i" = "Pre-aggregate to one row per ({.arg outer}, {.arg inner}) \\
+                   combination, or use {.fn lb_folds_grouped} without inner \\
+                   stratification."
+          ))
+        }
+      }
+      group_inner <- stats::setNames(
+        as.character(inner_col[match(outer_vals, outer_col)]),
+        as.character(outer_vals)
+      )
 
       # Stratified cyclic assignment:
       # 1. Within each stratum, shuffle the groups.

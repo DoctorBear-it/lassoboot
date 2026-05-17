@@ -91,6 +91,25 @@ lb_constraints <- function(...) {
   c(as.list(explicit), inferred)
 }
 
+# Internal: validate that all named constraint columns exist in data and are
+# numeric. Called by lb_spec() when an explicit lb_constraints() is supplied.
+.validate_constraints_against_data <- function(constraints, data) {
+  nms         <- names(constraints)
+  missing_cols <- setdiff(nms, names(data))
+  if (length(missing_cols) > 0L) {
+    cli::cli_abort(
+      "Constraint column{?s} not found in {.arg data}: {.val {missing_cols}}."
+    )
+  }
+  non_numeric <- nms[!vapply(data[nms], is.numeric, logical(1L))]
+  if (length(non_numeric) > 0L) {
+    cli::cli_abort(
+      "Constraint declared for non-numeric column{?s}: {.val {non_numeric}}."
+    )
+  }
+  invisible(NULL)
+}
+
 # Internal: apply constraint clipping to a data frame, column by column.
 # `constraints` is the merged named list from .merge_constraints().
 # Order of operations: perturb -> .apply_constraints() -> .apply_derives().

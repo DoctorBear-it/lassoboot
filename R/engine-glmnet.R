@@ -45,10 +45,14 @@ lb_engine_glmnet <- function() {
       # Extract the coefficient vector at a given lambda.
       # Returns a named numeric vector (including intercept).
       coef = function(fit, s = NULL, ...) {
-        s <- s %||% fit$lambda[1L]
+        s  <- s %||% fit$lambda[1L]
         cf <- stats::coef(fit, s = s, ...)
-        # coef.glmnet returns a dgCMatrix; coerce to named numeric
-        as.numeric(cf)
+        # coef.glmnet returns a (p+1) x 1 dgCMatrix; coerce to named numeric.
+        # Preserving names is required: coef_tbl term labels and sigma refit
+        # both rely on coefficient names matching design-matrix column names.
+        nms  <- rownames(cf)
+        vals <- as.numeric(cf)
+        if (!is.null(nms)) stats::setNames(vals, nms) else vals
       },
 
       # ------------------------------------------------------------------ cv
@@ -99,13 +103,11 @@ lb_engine_glmnet <- function() {
       },
 
       # --------------------------------------------------------------- sigma
-      # Residual standard error estimation. Delegates to sigma.R (Phase 3).
+      # Residual standard error estimation. Delegates to sigma.R.
       # method: one of "refit", "naive", "cv"
+      # foldid: integer fold-ID vector used by method = "cv"; passed via ...
       sigma = function(fit, x, y, method = "refit", ...) {
-        cli::cli_abort(
-          c("Engine sigma method not yet implemented.",
-            "i" = "sigma estimation is implemented in Phase 3 ({.fn lb_fit}).")
-        )
+        .estimate_sigma(fit, x, y, method = method, ...)
       }
     ),
     class = c("lb_engine_glmnet", "lb_engine")

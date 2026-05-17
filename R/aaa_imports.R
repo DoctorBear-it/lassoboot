@@ -9,12 +9,12 @@
 #' @importFrom generics tidy glance augment
 #' @importFrom ggplot2 ggplot aes autoplot geom_point geom_linerange geom_hline geom_line geom_ribbon facet_wrap theme_bw scale_color_viridis_d scale_fill_brewer labs
 #' @importFrom glmnet glmnet cv.glmnet
-#' @importFrom Matrix Matrix
+#' @importFrom Matrix Matrix sparse.model.matrix
 #' @importFrom matrixStats rowQuantiles rowMeans2 rowSds
 #' @importFrom purrr map map2 walk
 #' @importFrom rlang `%||%` abort warn inform enquo enquos eval_tidy quo_is_null new_environment caller_env
 #' @importFrom scales pseudo_log_trans
-#' @importFrom stats model.matrix quantile rnorm predict lm sd coef residuals fitted cor setNames
+#' @importFrom stats model.matrix model.frame model.response terms delete.response reformulate update quantile rnorm predict lm lm.fit sd coef residuals fitted cor setNames median
 #' @importFrom tibble tibble as_tibble is_tibble
 #' @importFrom tidyr pivot_longer pivot_wider crossing
 #' @importFrom vctrs vec_check_size vec_assert
