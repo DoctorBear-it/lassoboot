@@ -139,8 +139,10 @@ lb_grid <- function(boot, focal, n = 100, at = "observed", extrapolate = FALSE) 
       xc <- data[[nm]]
       if (is.numeric(xc)) stats::median(xc, na.rm = TRUE)
       else {
-        tbl <- table(xc)
-        names(tbl)[which.max(tbl)]
+        tbl      <- table(xc)
+        modal_nm <- names(tbl)[which.max(tbl)]
+        # Preserve factor class so model.frame() sees the right type.
+        if (is.factor(xc)) factor(modal_nm, levels = levels(xc)) else modal_nm
       }
     })
     names(non_focal_vals) <- other_cols

@@ -128,6 +128,28 @@ test_that("lb_grid at=list(...) uses supplied values", {
   expect_true(all(grid$x2 == 0))
 })
 
+test_that("lb_grid at='median' preserves factor class on non-focal columns", {
+  # Regression test: modal value of a factor column must come back as factor,
+  # not character, so that predict.lb_boot's model.frame() does not error.
+  set.seed(9L)
+  n  <- 40
+  df <- data.frame(
+    x1 = rnorm(n),
+    grp = factor(sample(c("A", "B", "C"), n, replace = TRUE)),
+    y   = rnorm(n)
+  )
+  spec <- suppressMessages(
+    lb_spec(y ~ x1 + grp, data = df,
+            control = lb_control(n_lambda = 5L, cv_reps = 1L,
+                                 store_path = FALSE))
+  )
+  boot <- withr::with_seed(3L, lb_bootstrap(spec, B = 10L))
+  grid <- lb_grid(boot, focal = "x1", n = 10, at = "median")
+  expect_s3_class(grid$grp, "factor")
+  # Confirm predict did not error (grid has predictions)
+  expect_true(all(c(".fitted", ".lower", ".upper") %in% names(grid)))
+})
+
 test_that("lb_grid focal values stay within observed range by default", {
   boot  <- make_pred_boot()
   data  <- boot$fit$spec$data

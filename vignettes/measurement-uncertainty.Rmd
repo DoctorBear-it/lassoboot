@@ -1,0 +1,282 @@
+---
+title: "Measurement Uncertainty in Parametric Bootstrap Lasso"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Measurement Uncertainty in Parametric Bootstrap Lasso}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+```{r setup}
+library(lassoboot)
+library(dplyr)
+```
+
+## Why measurement uncertainty matters in lasso
+
+Lasso regression assumes predictors are observed without error. When predictors
+carry instrument noise, two problems arise:
+
+1. **Bias toward zero.** Noise in predictors attenuates coefficient estimates
+   toward zero, making truly important predictors look weaker than they are.
+2. **Unstable selection.** A predictor near the lasso penalty boundary may be
+   selected or dropped depending on which side of the noise it falls on a given
+   day.
+
+The parametric bootstrap in `lassoboot` addresses both by explicitly modelling
+the noise. In each iteration, each predictor is perturbed by an independent
+draw from its declared uncertainty distribution before lasso is refit. Over
+*B* iterations, the selection probability and coefficient distribution reflect
+both model uncertainty *and* measurement uncertainty.
+
+## Declaring uncertainties: the three types
+
+Uncertainty is declared as a tibble via `lb_uncertainty()`. Three types are
+supported:
+
+| Type | Argument form | Interpretation |
+|---|---|---|
+| `"std"` | `std(value)` | Absolute standard deviation in the units of the column |
+| `"cov"` | `cov(value)` | Coefficient of variation as a percentage (e.g. `cov(4.0)` = 4 %) |
+| `"rel"` | `rel(value)` | Relative SD as a fraction (e.g. `rel(0.04)` = 4 %) |
+
+### Example: ASTM-documented uncertainties
+
+The `uncertainty_concrete` dataset bundled with the package declares
+uncertainties for the `concrete` dataset's predictors, sourced from ASTM
+standard precision statements:
+
+```{r uncertainty-table}
+uncertainty_concrete
+```
+
+**Choosing the right type:**
+- Use `"std"` when the standard specifies an absolute repeatability value
+  (e.g. ASTM C114 XRF alumina: ±0.07 wt %).
+- Use `"cov"` when the standard specifies a percent repeatability
+  (e.g. ASTM C109 strength: 3 % single-operator CoV).
+- Use `"rel"` when you have a fractional relative SD (e.g. from a
+  certificate of analysis that reports `u_rel = 0.04`).
+
+A missing column (column exists in data but is not listed in the uncertainty
+spec) is treated as having zero uncertainty — the column is not perturbed.
+Declaring a non-existent column is a hard error; silently dropping uncertainty
+would invalidate the analysis.
+
+## Common ASTM measurement uncertainties
+
+For convenience, typical values from standards relevant to cementitious
+materials:
+
+| Measurement | Method | Uncertainty | Type |
+|---|---|---|---|
+| Al₂O₃ by XRF | ASTM C114 | ±0.07 wt % | `std` |
+| SiO₂ by XRF | ASTM C114 | ±0.13 wt % | `std` |
+| Compressive strength | ASTM C109 | 3.0 % | `cov` |
+| Heat of hydration | ASTM C1897 | ±3.2 J/g | `std` |
+| Specific surface area (BET) | ISO 9277 | 2–5 % | `cov` |
+| Particle size D50 (laser) | ISO 13320 | 3–5 % | `cov` |
+| Loss on ignition | ASTM C114 | ±0.12 wt % | `std` |
+| Water demand (Blaine fineness) | ASTM C204 | ±8 m²/kg | `std` |
+
+Always prefer the *within-laboratory repeatability* (single-operator) value
+over the *reproducibility* (multi-lab) value when your analysis uses data from
+a single lab.
+
+## Derived quantities: `lb_derive()`
+
+When a predictor is computed from other measured quantities (e.g. volume from
+mass and density), the derivation must happen *after* uncertainty injection.
+Applying uncertainty to the inputs and then recomputing the derived quantity
+correctly propagates the correlated noise through the calculation.
+
+```{r derive-example, eval = FALSE}
+spec <- lb_spec(
+  strength_MPa ~ volume_Alite + volume_Belite + alumina,
+  data        = concrete_xrd,    # hypothetical XRD dataset
+  uncertainty = lb_uncertainty(
+    mass_Alite   = std(0.74, "ASTM C1365 Table 1, s_within"),
+    density_Alite = std(0.012, "ASTM C188"),
+    mass_Belite   = std(0.68, "ASTM C1365 Table 1, s_within"),
+    density_Belite = std(0.010, "ASTM C188")
+  ),
+  derive = list(
+    lb_derive(volume_Alite  = mass_Alite  / density_Alite),
+    lb_derive(volume_Belite = mass_Belite / density_Belite)
+  )
+)
+```
+
+The bootstrap loop applies uncertainty to `mass_Alite`, `density_Alite`, etc.,
+then recomputes `volume_Alite` from the perturbed inputs. The derive list runs
+in declaration order, so chained derives (e.g. `volume_total = volume_Alite +
+volume_Belite`) work as expected.
+
+**Constraint interaction.** Default constraints clip numeric columns to
+`[0, Inf)` if all observed values are non-negative. Clipping is applied to the
+raw measured columns *before* derived quantities are computed. A derived ratio
+(like volume = mass/density) is not re-clipped after derivation.
+
+## Normalizing a ratio response: `lb_normalize()`
+
+When the response is the ratio of a test measurement to a reference
+(e.g. strength relative to a control mixture), both the test measurement and
+the reference carry uncertainty. `lb_normalize()` registers a derived column
+and rewrites the formula's left-hand side:
+
+```{r normalize-example, eval = FALSE}
+spec <- lb_spec(
+  strength_MPa ~ (clayHOH + log(clayHOH)) * replacement * alumina * SSA * D50,
+  data        = concrete_with_ref,   # dataset with meas_strength + ref_strength
+  uncertainty = lb_uncertainty(
+    meas_strength = cov(3.0, "ASTM C109"),
+    ref_strength  = cov(2.2, "ASTM C109, mean of 3")
+  )
+) |>
+  lb_normalize(
+    response  = strength_MPa,
+    measured  = meas_strength,
+    reference = ref_strength
+  )
+```
+
+Each bootstrap iteration perturbs `meas_strength` and `ref_strength`
+independently, then recomputes the ratio. The user is responsible for declaring
+the uncertainty appropriate to how the values were pre-aggregated: if
+`ref_strength` is the mean of three replicates, the declared uncertainty should
+be the standard error of that mean (single-measurement SD / sqrt(3)), not the
+single-measurement SD.
+
+## Constraints: `lb_constraints()`
+
+By default, `lb_spec()` infers a non-negativity constraint for any predictor
+where all observed values are ≥ 0, and no constraint for predictors that cross
+zero. A one-time message reports the inferred constraints.
+
+Override defaults explicitly:
+
+```{r constraints-example, eval = FALSE}
+spec <- lb_spec(
+  y ~ x1 + x2 + x3 + moisture,
+  data = df,
+  constraints = lb_constraints(
+    x1       = c(0, 100),    # bounded weight percent
+    x2       = c(0, Inf),    # non-negative, no upper bound
+    moisture = c(-Inf, Inf)  # signed; no clipping
+  )
+)
+```
+
+Explicit declaration overrides inference. Columns not listed use the inferred
+default. A column declared with `c(-Inf, Inf)` is never clipped even if all
+observed values are non-negative.
+
+## The residual sigma method: why the default matters
+
+The parametric bootstrap generates the response in each iteration as:
+
+```
+y_star = fitted_original + rnorm(n, 0, sigma_hat)
+```
+
+How `sigma_hat` is estimated is controlled by `lb_control(sigma_method = ...)`:
+
+| Method | Description | Coverage |
+|---|---|---|
+| `"refit"` (default) | OLS on lasso-selected variables; residual SE from unregularized fit | Closest to nominal |
+| `"naive"` | `sd(y - fitted_lasso)` | Under-covers (residuals are shrunk) |
+| `"cv"` | Out-of-fold CV residuals | Honest but slow |
+
+The `"refit"` default is chosen because lasso shrinks its own residuals — using
+the regularized residual SE underestimates the true noise and results in
+bootstrap CIs that are too narrow. Refitting OLS on the selected variables
+largely closes this gap at the cost of one additional `lm()` call per fit.
+
+### Coverage simulation
+
+The code below verifies this on simulated data (skipped in package build;
+set `LASSOBOOT_COV_VIGNETTE=1` to run):
+
+```{r coverage-sim, eval = nchar(Sys.getenv("LASSOBOOT_COV_VIGNETTE")) > 0}
+set.seed(2025)
+n_sim   <- 100
+n       <- 120
+p_total <- 20
+p_signal <- 5
+B        <- 150
+
+cover_refit <- cover_naive <- numeric(n_sim)
+
+for (i in seq_len(n_sim)) {
+  # Simulated sparse data
+  X     <- matrix(rnorm(n * p_total), n, p_total)
+  beta  <- c(rep(2, p_signal), rep(0, p_total - p_signal))
+  y     <- X %*% beta + rnorm(n)
+  df_i  <- as.data.frame(X)
+  names(df_i) <- paste0("x", seq_len(p_total))
+  df_i$y <- as.numeric(y)
+
+  spec_r <- suppressMessages(lb_spec(y ~ ., data = df_i,
+    control = lb_control(sigma_method = "refit", cv_reps = 2L,
+                         n_lambda = 20L, store_path = FALSE)))
+  spec_n <- suppressMessages(lb_spec(y ~ ., data = df_i,
+    control = lb_control(sigma_method = "naive", cv_reps = 2L,
+                         n_lambda = 20L, store_path = FALSE)))
+
+  boot_r <- withr::with_seed(i, lb_bootstrap(spec_r, B = B))
+  boot_n <- withr::with_seed(i, lb_bootstrap(spec_n, B = B))
+
+  td_r   <- tidy(boot_r)
+  td_n   <- tidy(boot_n)
+
+  # Check CI coverage for x1 (true coef = 2)
+  cover_refit[i] <- td_r$conf.low[td_r$term == "x1"] <= 2 &
+                    td_r$conf.high[td_r$term == "x1"] >= 2
+  cover_naive[i] <- td_n$conf.low[td_n$term == "x1"] <= 2 &
+                    td_n$conf.high[td_n$term == "x1"] >= 2
+}
+
+cat("sigma='refit'  empirical 95% CI coverage:", mean(cover_refit), "\n")
+cat("sigma='naive'  empirical 95% CI coverage:", mean(cover_naive), "\n")
+```
+
+In repeated experiments the `"refit"` method consistently achieves closer to
+nominal 95 % coverage than `"naive"`. The gap is most pronounced when the
+selected model is sparse relative to the true signal (lasso aggressively
+shrinks residuals).
+
+## A note on selective inference
+
+The bootstrap CIs produced by `lassoboot` are **frequency-bootstrap** intervals,
+not selectively-inferentially valid intervals in the sense of Lockhart et al.
+(2014) or Taylor & Tibshirani (2015). This means:
+
+- The nominal 95 % CI reflects the bootstrap sampling distribution, not a
+  post-selection corrected pivot.
+- For predictors selected in almost every iteration (`selection_prob ≈ 1`), the
+  CI is reliable as a rough effect-size guide.
+- For predictors near the selection boundary (`selection_prob ≈ 0.5`), the CI
+  is less reliable; treat the selection probability and stability score as the
+  primary inferential claim.
+
+The package is designed to lead with selection/stability and treat CIs as
+supplementary, which is the appropriate posture for exploratory variable
+selection in materials science. Do not report bootstrap CIs as if they were
+p-value-corrected confidence intervals for post-selection inference.
+
+## References
+
+Lockhart, R., Taylor, J., Tibshirani, R. J., and Tibshirani, R. (2014).
+A significance test for the lasso. *Annals of Statistics*, **42**(2), 413–468.
+
+Meinshausen, N. and Bühlmann, P. (2010). Stability selection.
+*Journal of the Royal Statistical Society: Series B*, **72**(4), 417–473.

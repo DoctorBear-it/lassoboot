@@ -1,0 +1,170 @@
+---
+title: "Getting Started with lassoboot"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with lassoboot}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+```{r setup}
+library(lassoboot)
+```
+
+## What this package does
+
+`lassoboot` answers the question: *which of my predictors actually matter, given
+that I measured them with known instrument uncertainty?*
+
+Standard lasso regression assumes predictors are measured exactly. In practice,
+every sensor, balance, and test method introduces noise. When that noise is
+substantial relative to the predictor range — a 4 % coefficient of variation
+on a concrete strength test, a 0.07 wt % standard deviation on an XRF alumina
+measurement — it inflates uncertainty in the coefficient estimates and can cause
+predictors to be selected or dropped inconsistently across replicates.
+
+`lassoboot` propagates declared measurement uncertainties through a parametric
+bootstrap: in each of *B* iterations the predictors are perturbed by their
+declared noise, the response is regenerated from the fitted model, and lasso is
+refit. The result is a **selection probability** (fraction of iterations a
+predictor is retained) and a **stability score** (max selection probability
+across the regularization path), both of which are more informative than a
+single regularized point estimate.
+
+## A four-predictor example
+
+We will use a small synthetic dataset to illustrate the workflow before
+introducing the bundled `concrete` data.
+
+```{r toy-data}
+set.seed(101)
+n  <- 80
+df <- data.frame(
+  x1 = rnorm(n),        # strong signal
+  x2 = rnorm(n),        # moderate signal
+  x3 = rnorm(n),        # noise
+  x4 = rnorm(n)         # noise
+)
+df$y <- 2 * df$x1 + 0.8 * df$x2 + rnorm(n, sd = 0.6)
+```
+
+### Step 1: `lb_spec()` — declare the model
+
+```{r spec}
+spec <- suppressMessages(
+  lb_spec(
+    y ~ x1 + x2 + x3 + x4,
+    data        = df,
+    uncertainty = lb_uncertainty(
+      x1 = std(0.10),    # absolute SD of 0.10 units
+      x2 = cov(5.0)      # 5 % coefficient of variation
+    )
+  )
+)
+spec
+```
+
+`lb_spec()` validates the formula, checks that every uncertainty term exists
+as a numeric column, infers non-negativity constraints where appropriate, and
+stores everything needed for the bootstrap. No fitting happens yet.
+
+### Step 2: `lb_bootstrap()` — run the parametric bootstrap
+
+```{r bootstrap}
+boot <- withr::with_seed(42, lb_bootstrap(spec, B = 200))
+boot
+```
+
+With `B = 200` this takes a few seconds. Production analyses typically use
+`B = 1000` or more. The seed is set via `withr::with_seed()` so the global RNG
+state is not modified.
+
+### Step 3: `tidy()` — read the results
+
+```{r tidy}
+library(dplyr)
+
+td <- tidy(boot)
+td
+```
+
+Each row is one predictor. The key columns:
+
+| Column | Meaning |
+|---|---|
+| `estimate` | Bootstrap mean coefficient (zeros included for unselected iterations) |
+| `conf.low` / `conf.high` | Bootstrap quantile interval (default 95 %) |
+| `selection_prob` | Fraction of *B* iterations in which this term was selected |
+| `stability_score` | Max selection probability across the lambda path |
+
+`x1` and `x2` should have high selection probabilities; `x3` and `x4` should
+be near zero.
+
+### Step 4: `autoplot()` — visualize
+
+```{r plot-coef}
+autoplot(boot)
+```
+
+The color encodes selection probability. Terms towards the right with dark
+color are robustly selected with positive effects.
+
+```{r plot-selection}
+autoplot(boot, type = "selection")
+```
+
+The dashed line at 0.5 is the conventional "majority selection" threshold.
+Terms above it are selected in more than half of bootstrap iterations.
+
+### Filtering significant terms
+
+```{r filter}
+tidy(boot) |>
+  filter(lb_is_significant(pick(everything()), method = "selection", threshold = 0.5))
+```
+
+`lb_is_significant()` is a convenience predicate for use inside `dplyr::filter()`.
+The three available methods — `"ci"` (CI excludes zero), `"selection"`, and
+`"stability"` — are discussed in `vignette("interpreting-results")`.
+
+## The `concrete` dataset
+
+The package ships a 75-row dataset of limestone calcined clay cement (LC3)
+mortar cube strength measurements:
+
+```{r concrete-glimpse}
+dplyr::glimpse(concrete)
+```
+
+```{r uncertainty-concrete}
+uncertainty_concrete
+```
+
+The companion `uncertainty_concrete` tibble declares ASTM-sourced measurement
+uncertainties for each continuous predictor. Passing it to `lb_spec()` is
+all that is needed to activate uncertainty propagation for those columns.
+
+A full worked example on the `concrete` data appears in
+`vignette("interpreting-results")`. The methodology behind measurement
+uncertainty propagation and the choice of sigma method is covered in
+`vignette("measurement-uncertainty")`.
+
+## Next steps
+
+- `vignette("measurement-uncertainty")` — the three uncertainty types, derived
+  quantities, normalization, and how sigma method affects CI coverage.
+- `vignette("interpreting-results")` — selection probability vs. CI vs.
+  stability score, correlated predictors, prediction grids, and nested
+  cross-validation.
+- `?lb_control` — all tuning parameters with defaults and rationale.
+- `?lb_folds_grouped` — group-aware cross-validation to prevent mixture
+  leakage across folds.
