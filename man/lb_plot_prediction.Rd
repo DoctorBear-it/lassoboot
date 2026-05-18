@@ -9,11 +9,14 @@ lb_plot_prediction(x, focal, by = NULL, raw_data = NULL, ...)
 \arguments{
 \item{x}{An \code{lb_boot} object.}
 
-\item{focal}{Name of the focal predictor (string).}
+\item{focal}{Name of the focal predictor (string). Must be a column in the
+original data.}
 
-\item{by}{A \code{vars()} expression for faceting, or \code{NULL}. Default \code{NULL}.}
+\item{by}{A \code{vars()} expression for faceting (e.g. \code{vars(clay)}), or
+\code{NULL}. Default \code{NULL}.}
 
-\item{raw_data}{A data frame to overlay as points, or \code{NULL}. Default \code{NULL}.}
+\item{raw_data}{A data frame to overlay as points, or \code{NULL}. Default
+\code{NULL}. Must contain both \code{focal} and the response variable.}
 
 \item{...}{Passed to \code{\link[=lb_grid]{lb_grid()}}.}
 }
@@ -21,6 +24,12 @@ lb_plot_prediction(x, focal, by = NULL, raw_data = NULL, ...)
 A \code{ggplot} object.
 }
 \description{
-Wraps \code{\link[=lb_grid]{lb_grid()}} and \code{\link[=predict.lb_boot]{predict.lb_boot()}} to produce a ribbon plot of
-\verb{.fitted +/- interval} vs. the focal predictor.
+Wraps \code{\link[=lb_grid]{lb_grid()}} (with \code{at = "median"} by default) and
+\code{\link[=predict.lb_boot]{predict.lb_boot()}} to produce a ribbon plot of \code{.fitted} +/- interval
+vs. the focal predictor. Non-focal predictors are held at their median.
+}
+\details{
+Users wanting per-combination ribbons (e.g. one ribbon per observed mixture)
+should call \code{\link[=lb_grid]{lb_grid()}} directly with \code{at = "observed"} and build the
+ggplot manually.
 }

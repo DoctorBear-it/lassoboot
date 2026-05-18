@@ -89,11 +89,13 @@ test_that("B_sub subsamples iterations for type='response'", {
 })
 
 test_that("B_sub for type='coef' subsamples coef_tbl iterations", {
-  boot  <- make_pred_boot(B = 20L)
-  ct_sub <- withr::with_seed(1L,
-    predict(boot, type = "coef", B_sub = 5L)
-  )
-  expect_true(length(unique(ct_sub$iteration)) <= 5L)
+  # make_pred_boot uses strong signal (x1*2 + x2) so every bootstrap
+  # iteration selects at least one term; nrow(ct_sub) > 0 is guaranteed.
+  boot   <- make_pred_boot(B = 20L)
+  ct_sub <- withr::with_seed(1L, predict(boot, type = "coef", B_sub = 5L))
+  n_iters <- length(unique(ct_sub$iteration))
+  expect_true(nrow(ct_sub) > 0L)
+  expect_true(n_iters >= 1L && n_iters <= 5L)
 })
 
 # ---- lb_grid ----------------------------------------------------------------

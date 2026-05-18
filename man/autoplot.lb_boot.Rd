@@ -17,7 +17,9 @@
 \item{type}{Plot type: \code{"coefficients"} (default), \code{"selection"},
 \code{"stability"}, \code{"interactions"}, \code{"complexity"}, or \code{"prediction"}.}
 
-\item{...}{Passed to the underlying \verb{lb_plot_*()} function.}
+\item{...}{Passed to the underlying \verb{lb_plot_*()} function. For
+\code{type = "prediction"}, \code{focal} (a column name string) must be supplied
+here.}
 }
 \value{
 A \code{ggplot} object.

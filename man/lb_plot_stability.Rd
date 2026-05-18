@@ -18,5 +18,6 @@ Default \code{20}.}
 A \code{ggplot} object.
 }
 \description{
-Plot stability trajectories (selection probability vs. lambda)
+Shows how each term's selection probability varies across the regularization
+path. Requires \code{store_path = TRUE} in \code{\link[=lb_control]{lb_control()}}.
 }

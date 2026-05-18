@@ -15,5 +15,6 @@ lb_plot_complexity(x, ...)
 A \code{ggplot} object.
 }
 \description{
-Plot model complexity (number of selected terms) across bootstrap iterations
+Displays the distribution of how many predictors were selected in each
+bootstrap iteration. A dashed vertical line marks the mean.
 }

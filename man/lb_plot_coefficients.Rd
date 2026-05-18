@@ -14,7 +14,7 @@ lb_plot_coefficients(
 \arguments{
 \item{x}{An \code{lb_boot} object.}
 
-\item{scale}{\code{"raw"} (default) or \code{"gelman"} (2-SD scaling).}
+\item{scale}{\code{"raw"} (default) or \code{"gelman"} (2-SD scaling per Gelman 2008).}
 
 \item{filter}{\code{"all"} (default), \code{"significant"} (CI excludes zero), or
 \code{"selected"} (selection_prob > 0.5).}
@@ -25,5 +25,7 @@ lb_plot_coefficients(
 A \code{ggplot} object.
 }
 \description{
-Plot bootstrap coefficient estimates with confidence intervals
+Produces a horizontal forest plot of bootstrap coefficient estimates and
+quantile intervals, ordered by point estimate. Color encodes selection
+probability.
 }

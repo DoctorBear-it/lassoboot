@@ -1,3 +1,22 @@
+# Internal helper: build a (p x n_lambda) selection-probability matrix.
+# Called only from lb_plot_stability() — lb_stability() has its own inline loop.
+# Precondition: path_coefs is a non-NULL list of B dgCMatrix objects, each
+# (p+1) x n_lambda with the intercept in row 1.
+# Returns: named numeric matrix, rows = predictors (intercept stripped),
+# cols = lambda grid points, values in [0, 1].
+.path_sel_mat <- function(path_coefs, B) {
+  first_mat  <- path_coefs[[1L]][-1L, , drop = FALSE]
+  term_names <- rownames(first_mat)
+  n_lambda   <- ncol(first_mat)
+  sel_count  <- matrix(0L, nrow = length(term_names), ncol = n_lambda,
+                       dimnames = list(term_names, NULL))
+  for (b in seq_len(B)) {
+    pm        <- path_coefs[[b]][-1L, , drop = FALSE]
+    sel_count <- sel_count + (as.matrix(pm) != 0)
+  }
+  sel_count / B
+}
+
 #' Compute stability-selection summaries for bootstrap output
 #'
 #' Summarises each term's selection probability trajectory across the lambda

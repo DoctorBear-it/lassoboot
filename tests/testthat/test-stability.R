@@ -65,32 +65,45 @@ test_that("lb_correlated_pairs rejects non-lb_boot input", {
   expect_error(lb_correlated_pairs(list()), "lb_boot")
 })
 
-test_that("lb_correlated_pairs flags constructed correlated pair", {
-  # Build data where x1 and x2 are highly correlated but neither dominates
-  set.seed(5L)
-  n  <- 80
-  z  <- rnorm(n)
-  df <- data.frame(
-    x1 = z + rnorm(n, sd = 0.05),   # near-perfect correlation with x2
-    x2 = z + rnorm(n, sd = 0.05),
-    x3 = rnorm(n),
-    x4 = rnorm(n),
-    y  = z + rnorm(n, sd = 0.5)    # y depends on z, not on x1 or x2 alone
-  )
-  spec <- suppressMessages(
-    lb_spec(y ~ ., data = df,
-            control = lb_control(n_lambda = 10L, cv_reps = 2L))
-  )
-  boot  <- withr::with_seed(11L, lb_bootstrap(spec, B = 60L))
-  pairs <- lb_correlated_pairs(boot, cor_threshold = 0.9, prob_threshold = 0.6)
+test_that("lb_correlated_pairs flags a genuinely split correlated pair (deterministic)", {
+  # Build a minimal fake lb_boot with hand-crafted coef_tbl so the test does not
+  # depend on bootstrap RNG.  Math: prob_1 = prob_2 = 0.5, prob_either = 1.0.
+  # With cor_threshold = 0.9 and prob_threshold = 0.6:
+  #   max(p1, p2) = 0.5 < 0.6  -> guard does NOT skip
+  #   p_either = 1.0 > 0.6     -> row is added
+  # Expected result: exactly one row flagging (x1, x2).
+  z <- seq_len(80L)   # deterministic; cor(x1, x2) > 0.99 with tiny noise
+  fake_boot <- withr::with_seed(7L, {
+    structure(
+      list(
+        B        = 60L,
+        coef_tbl = tibble::tibble(
+          iteration = c(seq_len(30L), seq_len(30L) + 30L),
+          term      = c(rep("x1", 30L), rep("x2", 30L)),
+          estimate  = c(rep( 1.0, 30L), rep(-1.0, 30L))
+        ),
+        path_coefs = NULL,
+        fit = list(
+          x = `colnames<-`(
+            matrix(c(z + rnorm(80L, sd = 0.05),
+                     z + rnorm(80L, sd = 0.05)), 80L, 2L),
+            c("x1", "x2")
+          ),
+          lambda_path = NULL,
+          lambda      = 0.1,
+          spec        = list(data = data.frame(x1 = numeric(0L),
+                                               x2 = numeric(0L)))
+        )
+      ),
+      class = c("lb_boot", "lb_fit", "lb_spec")
+    )
+  })
 
-  # The pair (x1, x2) should appear because they are correlated but selection
-  # is split — the function may or may not flag them depending on the bootstrap
-  # realisation, so we only check the output schema.
-  expected_cols <- c("term_1", "term_2", "correlation",
-                     "prob_1", "prob_2", "prob_either")
-  expect_named(pairs, expected_cols)
-  expect_s3_class(pairs, "tbl_df")
+  result <- lb_correlated_pairs(fake_boot, cor_threshold = 0.9, prob_threshold = 0.6)
+  expect_equal(nrow(result), 1L)
+  expect_true("x1" %in% c(result$term_1, result$term_2))
+  expect_true("x2" %in% c(result$term_1, result$term_2))
+  expect_gte(result$prob_either[1L], 0.6)
 })
 
 test_that("lb_correlated_pairs returns empty tibble for uncorrelated data", {

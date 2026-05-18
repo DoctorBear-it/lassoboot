@@ -2,14 +2,14 @@
 % Please edit documentation in R/plot.R
 \name{lb_plot_interactions}
 \alias{lb_plot_interactions}
-\title{Plot interaction effects}
+\title{Plot interaction effects as a heatmap}
 \usage{
 lb_plot_interactions(x, order = 2L, ...)
 }
 \arguments{
 \item{x}{An \code{lb_boot} object.}
 
-\item{order}{Interaction order to display. Default \code{2L}.}
+\item{order}{Interaction order to display. Default \code{2L} (pairwise).}
 
 \item{...}{Unused.}
 }
@@ -17,5 +17,7 @@ lb_plot_interactions(x, order = 2L, ...)
 A \code{ggplot} object.
 }
 \description{
-Plot interaction effects
+Displays second-order interaction term estimates from the bootstrap as a
+symmetric tile heatmap. Returns a blank plot with an informative title if
+the model contains no interaction terms.
 }

@@ -17,5 +17,6 @@ lb_plot_selection(x, threshold = 0.5, ...)
 A \code{ggplot} object.
 }
 \description{
-Plot selection probabilities
+Produces a horizontal bar chart of selection probabilities for all
+model terms, ordered by probability. A reference line marks the threshold.
 }
