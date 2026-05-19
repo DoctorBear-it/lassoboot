@@ -1,9 +1,14 @@
 Package: lassoboot
 Title: Parametric Bootstrap for Lasso Regression with Measurement Uncertainty
 Version: 0.1.0
-Authors@R:
-    person("DoctorBear-it", email = "barrett310@gmail.com",
-           role = c("aut", "cre"))
+Authors@R: 
+    person(
+      given   = "Timothy",
+      family  = "Barrett",
+      email   = "dr.timothy.j.barrett@gmail.com",
+      role    = c("aut", "cre"),
+      comment = c(ORCID = "0000-0002-7703-1011")
+    )
 Description: Tidy parametric bootstrap for lasso regression in the presence of
     measurement uncertainty. Accepts tidy data frames, a declarative uncertainty
     specification, derived-quantity definitions, and per-column constraints;
@@ -47,6 +52,8 @@ Suggests:
     testthat (>= 3.0),
     vdiffr (>= 1.0)
 Config/testthat/edition: 3
+URL: https://github.com/DoctorBear-it/lassoboot, https://doctorbear-it.github.io/lassoboot
+BugReports: https://github.com/DoctorBear-it/lassoboot/issues
 Config/roxygen2/version: 8.0.0
 LazyData: true
 VignetteBuilder: knitr
