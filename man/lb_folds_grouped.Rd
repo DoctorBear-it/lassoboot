@@ -18,3 +18,9 @@ A fold-generator closure \verb{function(data) -> integer vector}.
 Assigns whole groups to the same fold so that no group's observations appear
 in both training and test sets.
 }
+\examples{
+gen   <- lb_folds_grouped("mixture", k = 5)
+folds <- gen(concrete)
+# Each mixture's observations share the same fold
+tapply(folds, concrete$mixture, unique)
+}

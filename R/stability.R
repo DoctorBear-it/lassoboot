@@ -41,6 +41,14 @@
 #'     exceeds 0.5, or `NA` if the term never reaches 0.5.
 #'   - `n_lambda_above_half`: number of lambda grid points at which selection
 #'     probability exceeds 0.5.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_stability(boot)
 #' @export
 lb_stability <- function(boot) {
   if (!inherits(boot, "lb_boot")) {
@@ -126,6 +134,14 @@ lb_stability <- function(boot) {
 #'
 #' @return A tibble of flagged pairs with columns `term_1`, `term_2`,
 #'   `correlation`, `prob_1`, `prob_2`, `prob_either`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_correlated_pairs(boot)
 #' @export
 lb_correlated_pairs <- function(boot, cor_threshold = 0.7, prob_threshold = 0.5) {
   if (!inherits(boot, "lb_boot")) {
@@ -213,6 +229,16 @@ lb_correlated_pairs <- function(boot, cor_threshold = 0.7, prob_threshold = 0.5)
 #'   methods. Default `0.5`.
 #'
 #' @return A logical vector the same length as `nrow(tidy_df)`.
+#' @examples
+#' # Construct a minimal tidy-style tibble to demonstrate the predicate
+#' td <- data.frame(
+#'   conf.low        = c(-0.5,  0.1, -0.2),
+#'   conf.high       = c(-0.1,  0.8,  0.3),
+#'   selection_prob  = c( 0.9,  0.7,  0.2),
+#'   stability_score = c( 0.85, 0.65, 0.15)
+#' )
+#' lb_is_significant(td, method = "ci")
+#' lb_is_significant(td, method = "selection", threshold = 0.6)
 #' @export
 lb_is_significant <- function(tidy_df,
                                method = c("ci", "selection", "stability", "all"),

@@ -21,6 +21,15 @@
 #'     loop can reuse it for generating y_star without rebuilding from spec$data
 #'     each iteration (O(n*p) allocation saved per iteration).
 #'   - `y`: original response vector (length n). Companion to `x`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' fit  <- lb_fit(spec)
+#' fit$lambda
+#' fit$sigma_hat
 #' @export
 lb_fit <- function(spec) {
   if (!inherits(spec, "lb_spec")) {

@@ -11,6 +11,14 @@
 #'   B iterations, zeros included), `estimate_median`, `std.error`, `conf.low`,
 #'   `conf.high`, `selection_prob`, `n_selected`, `stability_score`.
 #'   `(Intercept)` is dropped.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' tidy(boot)
 #' @export
 tidy.lb_boot <- function(x, conf.level = 0.95,
                           scale = c("raw", "gelman"), ...) {
@@ -89,6 +97,14 @@ tidy.lb_boot <- function(x, conf.level = 0.95,
 #'   `sigma_method`, `fold_spec`.
 #'   `lambda_mad` is `NA` when `fix_lambda = TRUE` (all iterations share the
 #'   same lambda; the MAD would be zero and is uninformative).
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' glance(boot)
 #' @export
 glance.lb_boot <- function(x, ...) {
   B       <- x$B
@@ -126,6 +142,14 @@ glance.lb_boot <- function(x, ...) {
 #' @param ... Unused; for S3 compatibility.
 #'
 #' @return The (new)data tibble augmented with `.fitted`, `.lower`, `.upper`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' augment(boot)
 #' @export
 augment.lb_boot <- function(x, newdata = NULL, level = 0.95, ...) {
   preds <- predict.lb_boot(x,

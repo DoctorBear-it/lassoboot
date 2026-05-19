@@ -25,3 +25,9 @@ across train/test) and, when \code{inner} is supplied, stratifies the assignment
 of outer groups to folds so each fold sees a balanced distribution of the
 inner variable.
 }
+\examples{
+# Each mixture has exactly one clay type, so inner stratification works
+gen   <- lb_folds_nested(outer = "mixture", inner = "clay", k_outer = 5)
+folds <- gen(concrete)
+table(folds)
+}

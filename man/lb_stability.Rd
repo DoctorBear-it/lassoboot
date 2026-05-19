@@ -35,3 +35,12 @@ When \code{store_path = FALSE} was used in \code{lb_control()}, \code{path_coefs
 available and \code{stability_score} falls back to the point-lambda selection
 probability (same as \code{selection_prob} in \code{\link[=tidy.lb_boot]{tidy.lb_boot()}}).
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+lb_stability(boot)
+}

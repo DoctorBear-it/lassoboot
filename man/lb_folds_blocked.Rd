@@ -20,3 +20,8 @@ Treats each unique value of \code{block} as an indivisible unit and assigns whol
 blocks to folds in their natural order (no shuffling), preserving temporal or
 spatial ordering.
 }
+\examples{
+gen   <- lb_folds_blocked("mixture", k = 5)
+folds <- gen(concrete)
+table(folds)
+}

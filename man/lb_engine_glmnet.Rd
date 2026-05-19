@@ -16,3 +16,8 @@ the \code{lb_engine} interface. The bootstrap loop calls engine methods by name
 and never calls \code{glmnet::glmnet} directly, keeping future engine additions
 (e.g. \code{lb_engine_glmmlasso()}) non-breaking.
 }
+\examples{
+eng <- lb_engine_glmnet()
+class(eng)
+names(eng)
+}

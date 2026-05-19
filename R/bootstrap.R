@@ -29,6 +29,14 @@
 #'   - `seed_used`: integer seed used for this run (always set, even when
 #'     `control$seed` was `NULL` — generated randomly then stored).
 #'   - `elapsed_sec`: wall-clock seconds for the bootstrap loop.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' print(boot)
 #' @export
 lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
   if (inherits(spec_or_fit, "lb_fit")) {

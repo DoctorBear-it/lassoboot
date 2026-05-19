@@ -11,6 +11,12 @@
 #'
 #' @return An `lb_constraints` object (a named list of numeric length-2
 #'   vectors).
+#' @examples
+#' lb_constraints(
+#'   alumina  = c(0, 100),    # bounded weight percent
+#'   SSA      = c(0, Inf),    # non-negative
+#'   moisture = c(-Inf, Inf)  # signed, no clipping
+#' )
 #' @export
 lb_constraints <- function(...) {
   entries <- list(...)

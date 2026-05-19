@@ -23,3 +23,10 @@ error propagates correctly through the derived value.
 Derives run in declaration order and may chain: a second derive may reference
 a column produced by the first.
 }
+\examples{
+# Derive volume from mass and density
+lb_derive(volume = mass / density)
+
+# Second derive can reference a column from the first
+lb_derive(volume_total = volume_Alite + volume_Belite)
+}

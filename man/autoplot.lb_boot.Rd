@@ -30,3 +30,15 @@ corresponding named function and returns a plain \code{ggplot} object (no
 \code{print()}, no side effects). All inherit data through \code{\link[=tidy.lb_boot]{tidy.lb_boot()}} so
 user-supplied filtering works identically.
 }
+\examples{
+\donttest{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+autoplot(boot)
+autoplot(boot, type = "selection")
+}
+}

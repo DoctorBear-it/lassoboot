@@ -4,6 +4,10 @@
 #'
 #' @return A fold-generator closure `function(data) -> integer vector` of fold
 #'   IDs the same length as `nrow(data)`.
+#' @examples
+#' gen   <- lb_folds_kfold(k = 5)
+#' folds <- gen(concrete)
+#' table(folds)
 #' @export
 lb_folds_kfold <- function(k = 10) {
   k <- .check_k(k, "k")
@@ -27,6 +31,11 @@ lb_folds_kfold <- function(k = 10) {
 #' @param k Number of folds. Default `10`.
 #'
 #' @return A fold-generator closure `function(data) -> integer vector`.
+#' @examples
+#' gen   <- lb_folds_grouped("mixture", k = 5)
+#' folds <- gen(concrete)
+#' # Each mixture's observations share the same fold
+#' tapply(folds, concrete$mixture, unique)
 #' @export
 lb_folds_grouped <- function(group, k = 10) {
   if (!is.character(group) || length(group) != 1L || group == "") {
@@ -69,6 +78,11 @@ lb_folds_grouped <- function(group, k = 10) {
 #' @param k_inner Reserved for future sub-folding; must be `NULL` in v0.1.
 #'
 #' @return A fold-generator closure `function(data) -> integer vector`.
+#' @examples
+#' # Each mixture has exactly one clay type, so inner stratification works
+#' gen   <- lb_folds_nested(outer = "mixture", inner = "clay", k_outer = 5)
+#' folds <- gen(concrete)
+#' table(folds)
 #' @export
 lb_folds_nested <- function(outer, inner = NULL, k_outer = 5, k_inner = NULL) {
   if (!is.character(outer) || length(outer) != 1L || outer == "") {
@@ -161,6 +175,10 @@ lb_folds_nested <- function(outer, inner = NULL, k_outer = 5, k_inner = NULL) {
 #' @param k Number of folds. Default `5`.
 #'
 #' @return A fold-generator closure `function(data) -> integer vector`.
+#' @examples
+#' gen   <- lb_folds_blocked("mixture", k = 5)
+#' folds <- gen(concrete)
+#' table(folds)
 #' @export
 lb_folds_blocked <- function(block, k = 5) {
   if (!is.character(block) || length(block) != 1L || block == "") {
@@ -195,6 +213,10 @@ lb_folds_blocked <- function(block, k = 5) {
 #'   repetitions (typically by not closing over a fixed state).
 #'
 #' @return The input `fn`, validated and classed as an `lb_fold_generator`.
+#' @examples
+#' gen   <- lb_folds_custom(function(data) sample(rep(1:5, length.out = nrow(data))))
+#' folds <- gen(concrete)
+#' table(folds)
 #' @export
 lb_folds_custom <- function(fn) {
   if (!is.function(fn)) {

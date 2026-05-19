@@ -39,14 +39,11 @@ other function globally. Internally, \code{lb_uncertainty()} evaluates its
 arguments in a child environment that defines \code{std}, \code{cov}, and \code{rel};
 outside that call, the names resolve normally.
 }
-
-\subsection{Example}{
-
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{lb_uncertainty(
+}
+\examples{
+lb_uncertainty(
   alumina  = std(0.071, "ASTM C114"),
   SSA      = cov(0.56,  "Mfr certificate of analysis"),
   strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
 )
-}\if{html}{\out{</div>}}
-}
 }

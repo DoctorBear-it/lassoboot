@@ -7,6 +7,10 @@
 #'
 #' @return An object of class `c("lb_engine_glmnet", "lb_engine")`: a named
 #'   list with five methods: `fit`, `predict`, `coef`, `cv`, and `sigma`.
+#' @examples
+#' eng <- lb_engine_glmnet()
+#' class(eng)
+#' names(eng)
 #' @export
 lb_engine_glmnet <- function() {
   structure(

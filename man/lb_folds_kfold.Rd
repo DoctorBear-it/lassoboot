@@ -16,3 +16,8 @@ IDs the same length as \code{nrow(data)}.
 \description{
 Standard k-fold cross-validation fold generator
 }
+\examples{
+gen   <- lb_folds_kfold(k = 5)
+folds <- gen(concrete)
+table(folds)
+}

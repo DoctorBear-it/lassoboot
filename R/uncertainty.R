@@ -21,22 +21,18 @@
 #' arguments in a child environment that defines `std`, `cov`, and `rel`;
 #' outside that call, the names resolve normally.
 #'
-#' ## Example
-#'
-#' ```r
-#' lb_uncertainty(
-#'   alumina  = std(0.071, "ASTM C114"),
-#'   SSA      = cov(0.56,  "Mfr certificate of analysis"),
-#'   strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
-#' )
-#' ```
-#'
 #' @param ... Named arguments `column = std(value)`, `column = cov(value)`, or
 #'   `column = rel(value)`. Alternatively, a single pre-built tibble with
 #'   columns `term`, `type`, `value`, and optionally `source`.
 #'
 #' @return A tibble with columns `term` (chr), `type` (chr: `"std"/"cov"/"rel"`),
 #'   `value` (dbl, >= 0), `source` (chr).
+#' @examples
+#' lb_uncertainty(
+#'   alumina  = std(0.071, "ASTM C114"),
+#'   SSA      = cov(0.56,  "Mfr certificate of analysis"),
+#'   strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
+#' )
 #' @export
 lb_uncertainty <- function(...) {
   # Build the evaluation environment BEFORE accessing `...` so that the

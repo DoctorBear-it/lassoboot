@@ -74,5 +74,4 @@
 #'   \item{Report bugs at \url{https://github.com/DoctorBear-it/lassoboot/issues}}
 #' }
 #'
-#' @keywords internal
 "_PACKAGE"

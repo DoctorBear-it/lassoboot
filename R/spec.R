@@ -26,6 +26,9 @@
 #' @param control A [lb_control()] object. Default [lb_control()].
 #'
 #' @return An `lb_spec` object.
+#' @examples
+#' spec <- suppressMessages(lb_spec(strength_MPa ~ clayHOH + alumina, data = concrete))
+#' print(spec)
 #' @export
 lb_spec <- function(formula, data,
                     uncertainty = NULL,

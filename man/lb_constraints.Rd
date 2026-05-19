@@ -21,3 +21,10 @@ the allowable range for that column after uncertainty injection. A column not
 listed receives an inferred default at \code{\link[=lb_spec]{lb_spec()}} time: \code{c(0, Inf)} if all
 observed values are \verb{>= 0}, otherwise \code{c(-Inf, Inf)}.
 }
+\examples{
+lb_constraints(
+  alumina  = c(0, 100),    # bounded weight percent
+  SSA      = c(0, Inf),    # non-negative
+  moisture = c(-Inf, Inf)  # signed, no clipping
+)
+}

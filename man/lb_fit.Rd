@@ -33,3 +33,13 @@ fits the final model via the spec's engine, and estimates the residual
 standard error. The result is stored in an \code{lb_fit} object and passed to
 \code{\link[=lb_bootstrap]{lb_bootstrap()}}.
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+fit  <- lb_fit(spec)
+fit$lambda
+fit$sigma_hat
+}

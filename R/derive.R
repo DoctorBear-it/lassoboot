@@ -12,6 +12,12 @@
 #'   evaluated via [rlang::eval_tidy()] in the context of that data frame.
 #'
 #' @return An `lb_derive` object (a classed list with `$name` and `$expr`).
+#' @examples
+#' # Derive volume from mass and density
+#' lb_derive(volume = mass / density)
+#'
+#' # Second derive can reference a column from the first
+#' lb_derive(volume_total = volume_Alite + volume_Belite)
 #' @export
 lb_derive <- function(...) {
   quos <- rlang::enquos(...)

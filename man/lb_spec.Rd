@@ -52,3 +52,7 @@ cross-validation fold scheme, engine, and tuning control for the subsequent
 bootstrap. Validates all inputs immediately and emits informative errors
 that name domain quantities, not statistical operations.
 }
+\examples{
+spec <- suppressMessages(lb_spec(strength_MPa ~ clayHOH + alumina, data = concrete))
+print(spec)
+}

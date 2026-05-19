@@ -18,3 +18,8 @@ The input \code{fn}, validated and classed as an \code{lb_fold_generator}.
 \description{
 Custom fold generator
 }
+\examples{
+gen   <- lb_folds_custom(function(data) sample(rep(1:5, length.out = nrow(data))))
+folds <- gen(concrete)
+table(folds)
+}

@@ -16,7 +16,7 @@
 #'
 #' @return An updated `lb_spec` object with the normalization registered as a
 #'   derived column.
-#' @export
+#' @keywords internal
 lb_normalize <- function(spec, response, measured, reference) {
   stop("Not yet implemented", call. = FALSE)
 }

@@ -21,3 +21,12 @@ same lambda; the MAD would be zero and is uninformative).
 \description{
 Model-level bootstrap summary
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+glance(boot)
+}

@@ -1,0 +1,71 @@
+url: ~
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: "Model specification"
+    desc: "Declare what to fit and how."
+    contents:
+      - lb_spec
+      - lb_control
+      - lb_uncertainty
+      - lb_constraints
+      - lb_derive
+      - lb_engine_glmnet
+
+  - title: "Fold generators"
+    desc: "Cross-validation fold assignment strategies."
+    contents:
+      - lb_folds_kfold
+      - lb_folds_grouped
+      - lb_folds_nested
+      - lb_folds_blocked
+      - lb_folds_custom
+
+  - title: "Fitting and bootstrapping"
+    desc: "Run the model and the parametric bootstrap."
+    contents:
+      - lb_fit
+      - lb_bootstrap
+
+  - title: "Tidy model summaries"
+    desc: "broom-compatible extraction of results."
+    contents:
+      - tidy.lb_boot
+      - glance.lb_boot
+      - augment.lb_boot
+
+  - title: "Prediction"
+    desc: "Generate predictions and prediction grids."
+    contents:
+      - predict.lb_boot
+      - lb_grid
+
+  - title: "Plots"
+    desc: "ggplot2-based visualisations of bootstrap results."
+    contents:
+      - autoplot.lb_boot
+      - lb_plot_coefficients
+      - lb_plot_selection
+      - lb_plot_stability
+      - lb_plot_interactions
+      - lb_plot_complexity
+      - lb_plot_prediction
+
+  - title: "Stability and significance helpers"
+    desc: "Post-hoc diagnostics on bootstrap output."
+    contents:
+      - lb_stability
+      - lb_correlated_pairs
+      - lb_is_significant
+
+  - title: "Data"
+    desc: "Bundled example datasets."
+    contents:
+      - concrete
+      - uncertainty_concrete
+
+  - title: "Package"
+    contents:
+      - lassoboot-package

@@ -29,3 +29,14 @@ Produces a horizontal forest plot of bootstrap coefficient estimates and
 quantile intervals, ordered by point estimate. Color encodes selection
 probability.
 }
+\examples{
+\donttest{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+lb_plot_coefficients(boot)
+}
+}

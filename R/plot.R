@@ -13,6 +13,17 @@
 #'   here.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' autoplot(boot)
+#' autoplot(boot, type = "selection")
+#' }
 #' @export
 autoplot.lb_boot <- function(object,
                               type = c("coefficients", "selection", "stability",
@@ -42,6 +53,16 @@ autoplot.lb_boot <- function(object,
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_coefficients(boot)
+#' }
 #' @export
 lb_plot_coefficients <- function(x, scale = c("raw", "gelman"),
                                   filter = c("all", "significant", "selected"),
@@ -90,6 +111,16 @@ lb_plot_coefficients <- function(x, scale = c("raw", "gelman"),
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_selection(boot)
+#' }
 #' @export
 lb_plot_selection <- function(x, threshold = 0.5, ...) {
   td       <- tidy.lb_boot(x)
@@ -119,6 +150,16 @@ lb_plot_selection <- function(x, threshold = 0.5, ...) {
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_stability(boot)
+#' }
 #' @export
 lb_plot_stability <- function(x, top_n = 20, ...) {
   if (!inherits(x, "lb_boot")) {
@@ -154,7 +195,7 @@ lb_plot_stability <- function(x, top_n = 20, ...) {
     ggplot2::scale_color_viridis_d(option = "turbo") +
     ggplot2::scale_y_continuous(limits = c(0, 1)) +
     ggplot2::theme_bw() +
-    ggplot2::labs(x = "log(\u03bb)", y = "Selection probability", color = NULL)
+    ggplot2::labs(x = "log(lambda)", y = "Selection probability", color = NULL)
 }
 
 #' Plot interaction effects as a heatmap
@@ -168,6 +209,16 @@ lb_plot_stability <- function(x, top_n = 20, ...) {
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_interactions(boot)
+#' }
 #' @export
 lb_plot_interactions <- function(x, order = 2L, ...) {
   td   <- tidy.lb_boot(x)
@@ -227,6 +278,16 @@ lb_plot_interactions <- function(x, order = 2L, ...) {
 #' @param ... Passed to [lb_grid()].
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_prediction(boot, focal = "x1")
+#' }
 #' @export
 lb_plot_prediction <- function(x, focal, by = NULL, raw_data = NULL, ...) {
   if (!inherits(x, "lb_boot")) {
@@ -273,6 +334,16 @@ lb_plot_prediction <- function(x, focal, by = NULL, raw_data = NULL, ...) {
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_complexity(boot)
+#' }
 #' @export
 lb_plot_complexity <- function(x, ...) {
   n_sel_per_iter <- tabulate(x$coef_tbl$iteration, nbins = x$B)

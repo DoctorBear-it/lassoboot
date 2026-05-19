@@ -21,3 +21,14 @@ A \code{ggplot} object.
 Shows how each term's selection probability varies across the regularization
 path. Requires \code{store_path = TRUE} in \code{\link[=lb_control]{lb_control()}}.
 }
+\examples{
+\donttest{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+lb_plot_stability(boot)
+}
+}

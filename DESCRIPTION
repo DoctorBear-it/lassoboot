@@ -1,6 +1,6 @@
 Package: lassoboot
 Title: Parametric Bootstrap for Lasso Regression with Measurement Uncertainty
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R:
     person("DoctorBear-it", email = "barrett310@gmail.com",
            role = c("aut", "cre"))
@@ -11,6 +11,7 @@ Description: Tidy parametric bootstrap for lasso regression in the presence of
     intervals compatible with dplyr, ggplot2, and broom.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-US
 Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1.0)

@@ -35,6 +35,12 @@
 #' @return An `lb_control` object (a validated, classed list). The print method
 #'   shows only non-default values; prints `<lb_control: all defaults>` when
 #'   every argument is at its default.
+#' @examples
+#' # All defaults
+#' lb_control()
+#'
+#' # Non-default: 3 folds, naive sigma, fixed seed
+#' lb_control(cv_folds = 3L, sigma_method = "naive", seed = 42L)
 #' @export
 lb_control <- function(lambda = "repeated_cv",
                        cv_folds = 10L,

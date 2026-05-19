@@ -18,6 +18,14 @@
 #'
 #' @return A tibble with `.fitted` and, if `interval = "confidence"`, `.lower`
 #'   and `.upper`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' predict(boot, interval = "confidence")
 #' @export
 predict.lb_boot <- function(object, newdata = NULL,
                              type = c("response", "coef"),
@@ -90,6 +98,14 @@ predict.lb_boot <- function(object, newdata = NULL,
 #'   range? User must opt in. Default `FALSE`.
 #'
 #' @return A tibble with the grid columns plus `.fitted`, `.lower`, `.upper`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_grid(boot, focal = "x1", n = 10, at = "median")
 #' @export
 lb_grid <- function(boot, focal, n = 100, at = "observed", extrapolate = FALSE) {
   if (!inherits(boot, "lb_boot")) {

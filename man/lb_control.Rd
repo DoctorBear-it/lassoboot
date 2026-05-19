@@ -73,3 +73,10 @@ every argument is at its default.
 \description{
 Set tuning parameters for the bootstrap
 }
+\examples{
+# All defaults
+lb_control()
+
+# Non-default: 3 folds, naive sigma, fixed seed
+lb_control(cv_folds = 3L, sigma_method = "naive", seed = 42L)
+}

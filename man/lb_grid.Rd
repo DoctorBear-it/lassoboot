@@ -35,3 +35,12 @@ Formula transformations such as \code{I(x^2)}, \code{log(x)}, and interaction
 expansion are applied at predict-time via the formula. \code{focal} must be a
 column name present in \code{spec$data}, not a formula term like \code{"I(clayHOH^2)"}.
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+lb_grid(boot, focal = "x1", n = 10, at = "median")
+}

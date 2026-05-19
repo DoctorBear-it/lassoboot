@@ -43,3 +43,12 @@ quantities, generates a parametric response from the original fit, refits
 via the engine, and stores coefficients (and optionally the full path and
 fit objects). Returns an \code{lb_boot} object.
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+print(boot)
+}

@@ -10,3 +10,6 @@
 ^reference$
 ^LICENSE\.md$
 ^data-raw$
+^cran-comments\.md$
+^_pkgdown\.yml$
+^docs$

@@ -42,3 +42,12 @@ path). Does not require \code{keep_models = TRUE} for standard prediction.
 The internal pipeline is matrix-based: no \code{nest()}/\code{unnest()} in the hot
 path; summaries computed via \code{matrixStats::rowQuantiles}.
 }
+\examples{
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 5)
+predict(boot, interval = "confidence")
+}

@@ -29,3 +29,4 @@ on both columns and for ensuring the declared uncertainties are consistent
 with any pre-aggregation (e.g., if \code{reference} is a mean of triplicates,
 declare the standard error of that mean, not the single-measurement SD).
 }
+\keyword{internal}
