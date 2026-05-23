@@ -40,7 +40,7 @@ lb_derive(volume = mass / density)
 #> $expr
 #> <quosure>
 #> expr: ^mass / density
-#> env:  0x555748bafee8
+#> env:  0x56265f675b60
 #> 
 #> attr(,"class")
 #> [1] "lb_derive"
@@ -53,7 +53,7 @@ lb_derive(volume_total = volume_Alite + volume_Belite)
 #> $expr
 #> <quosure>
 #> expr: ^volume_Alite + volume_Belite
-#> env:  0x555748bafee8
+#> env:  0x56265f675b60
 #> 
 #> attr(,"class")
 #> [1] "lb_derive"

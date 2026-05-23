@@ -1,0 +1,259 @@
+# Methodological Foundations
+
+``` r
+
+library(lassoboot)
+```
+
+## The problem this package solves
+
+A researcher collects 75 mortar cube strength measurements from five
+calcined clay cement blends at three curing ages. She has four candidate
+predictors: clay heat of hydration (measured by calorimetry), alumina
+content (by XRF), specific surface area (by BET nitrogen adsorption),
+and median particle diameter (by laser diffraction). She wants to know
+which predictors matter.
+
+This is not a large-n problem for which standard lasso asymptotics
+apply. It is a **lonely-island problem**: a single dataset, measured
+with instruments that have documented precision limits, analysed once.
+There is no population of LC3 studies to average over. The uncertainty
+in “which predictors matter” comes from two distinct sources:
+
+1.  **Model uncertainty** — finite sample size means the estimated lasso
+    path is noisy. A different 75-cube experiment would give a different
+    selected set.
+2.  **Measurement uncertainty** — every sensor adds noise. If alumina
+    content were measured on a different calibration day, the perturbed
+    values would shift the lasso penalty boundary for that variable.
+
+Both sources are real. Ignoring measurement uncertainty understates how
+fragile the selected model is. `lassoboot` propagates both
+simultaneously.
+
+------------------------------------------------------------------------
+
+## The three methodological pillars
+
+### 1. GUM Monte Carlo for measurement uncertainty propagation
+
+The *Guide to the Expression of Uncertainty in Measurement* (JCGM
+100:2008; “GUM”) specifies Monte Carlo simulation as a Supplement-1
+method for propagating uncertainties through non-linear functions. The
+GUM approach:
+
+- Each measurand carries a declared probability distribution reflecting
+  its measurement uncertainty.
+- In each trial, all measurands are independently drawn from their
+  distributions and the quantity of interest is computed.
+- The distribution of results over many trials is the propagated
+  uncertainty.
+
+`lassoboot` implements this exactly: in each of *B* bootstrap
+iterations, every predictor declared in
+[`lb_uncertainty()`](https://doctorbear-it.github.io/lassoboot/reference/lb_uncertainty.md)
+is perturbed by an independent draw from its declared distribution
+(`"std"` → N(0, σ²), `"cov"` → N(0, (\|x\|·cv/100)²), `"rel"` → N(0,
+(\|x\|·f)²)). The perturbed data are clipped to declared constraints,
+derived quantities are recomputed, and lasso is refit. The *B* refits
+collectively represent the propagated uncertainty.
+
+This is a **forward propagation**: we do not attempt to back-compute
+which component of uncertainty matters most. We simulate the complete
+analysis as it would run on slightly different measurements, because
+that is what “measurement uncertainty” means in practice.
+
+### 2. SIMEX and bias under measurement error
+
+In ordinary lasso, predictors measured with noise cause **attenuation
+bias**: the coefficient estimate for a noisy predictor is biased toward
+zero because part of its variance is noise that the model cannot use.
+Lasso compounds this by also shrinking coefficients explicitly via the
+penalty.
+
+SIMEX (simulation extrapolation; Cook and Stefanski 1994) estimates this
+bias by fitting the model at progressively amplified noise levels and
+extrapolating back to zero noise. The `lassoboot` bootstrap does not
+implement SIMEX extrapolation explicitly; instead, it propagates the
+*declared* noise level and reports how the selected model varies across
+draws. This is a more conservative answer: it asks “how stable is the
+*analysis* we actually ran, given the noise we actually had?” rather
+than “what would the result look like without noise?”
+
+The practical implication is that `lassoboot` selection probabilities
+reflect both model uncertainty and measurement uncertainty
+simultaneously. A predictor near the penalty boundary may have a low
+selection probability not because it is uninformative but because its
+SNR (signal-to-noise ratio given its declared uncertainty) is too low to
+push it reliably above the lasso penalty. That is useful diagnostic
+information: it says “if you could measure this predictor more
+precisely, selection stability would improve.”
+
+### 3. Meinshausen–Bühlmann stability selection
+
+Meinshausen and Bühlmann (2010) showed that selection stability — the
+probability that a predictor is selected across random subsamples — is a
+more reliable criterion for variable selection than a single lasso path.
+Their analysis produced finite-sample bounds on the expected number of
+false discoveries when using a stability threshold.
+
+`lassoboot` generalises this idea: instead of subsampling the
+observations, it perturbs the predictors by their declared measurement
+distributions. This makes the bootstrap more informative for the
+lonely-island case, where the sample is fixed but the measurements are
+noisy.
+
+Two stability diagnostics are reported by
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html):
+
+- **`selection_prob`**: the fraction of *B* iterations in which the
+  predictor had a nonzero coefficient at the CV-optimal lambda. This is
+  the primary selection criterion for exploratory variable selection.
+- **`stability_score`**: the *maximum* selection probability across the
+  full regularization path (cf. Meinshausen and Bühlmann’s Π̂). A
+  predictor with a high stability score is selected consistently
+  regardless of which lambda value is used — it is robust to the
+  arbitrary choice of regularization strength. Use stability score as a
+  more conservative criterion for confirmatory claims.
+
+Neither metric is a p-value. They are **stability diagnostics**:
+empirical summaries of how consistently the lasso identifies a given
+predictor as informative under realistic perturbations of the data. A
+selection probability of 0.90 means the predictor is selected in 90 % of
+bootstrap iterations; it does not mean there is a 10 % probability the
+predictor is truly zero.
+
+------------------------------------------------------------------------
+
+## Why not Bayesian lasso?
+
+The Bayesian lasso (Park and Casella 2008; Hans 2009) places a Laplace
+(double- exponential) prior on the coefficients and uses the posterior
+as the uncertainty representation. This is an elegant formulation but it
+is not what `lassoboot` is for, for three reasons:
+
+1.  **Measurement uncertainty is not parameter uncertainty.** The
+    Bayesian posterior quantifies uncertainty about the true regression
+    coefficients given the observed data. Measurement uncertainty is
+    uncertainty about the *data themselves* — the predictors were not
+    measured exactly. These are different modelling layers. Folding
+    instrument precision into a prior on coefficients confounds them.
+
+2.  **Prior elicitation is hard in small-n settings.** With *n* = 75 and
+    *p* = 20+ interaction terms, the posterior is sensitive to the
+    prior. The Laplace prior hyperparameter controls shrinkage globally;
+    `lassoboot`’s measurement uncertainty declarations are per-column,
+    sourced from normative standards, and do not require subjective
+    tuning.
+
+3.  **Selection is not posterior probability.** The Bayesian lasso does
+    not produce exactly-zero coefficients (it uses a continuous prior).
+    Variable selection requires an additional spike-and-slab layer
+    (Ishwaran and Rao
+
+    2005. or a continuous horseshoe-type prior (Carvalho et al. 2010),
+          each of which requires its own posterior computation and
+          threshold choice. The `lassoboot` selection probability is a
+          simple, interpretable empirical frequency.
+
+The parametric bootstrap occupies a useful middle ground: it uses
+frequentist lasso for coefficient estimation (with well-understood
+regularized path algorithms), adds genuine uncertainty propagation for
+the measurement component, and reports stability diagnostics that are no
+harder to interpret than a proportion.
+
+------------------------------------------------------------------------
+
+## Why this isn’t overcomplicated
+
+The full `lassoboot` workflow is:
+
+``` r
+
+spec <- lb_spec(y ~ x1 + x2 + x3,
+                data        = df,
+                uncertainty = lb_uncertainty(x1 = std(0.1), x2 = cov(5.0)))
+boot <- lb_bootstrap(spec, B = 500)
+tidy(boot)
+autoplot(boot)
+```
+
+The complexity in this vignette describes *why* those four lines work,
+not what the user needs to know to run them. The package has three
+levels of user interaction:
+
+1.  **Standard use**: declare
+    [`lb_spec()`](https://doctorbear-it.github.io/lassoboot/reference/lb_spec.md) +
+    [`lb_bootstrap()`](https://doctorbear-it.github.io/lassoboot/reference/lb_bootstrap.md),
+    interpret [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
+    and
+    [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html).
+    No knowledge of GUM or stability selection required.
+2.  **Tuning**: adjust
+    [`lb_control()`](https://doctorbear-it.github.io/lassoboot/reference/lb_control.md)
+    parameters (CV folds, sigma method, lambda strategy). The defaults
+    were chosen to work well on small-n materials-science datasets.
+3.  **Advanced**: use
+    [`lb_derive()`](https://doctorbear-it.github.io/lassoboot/reference/lb_derive.md)
+    and
+    [`lb_normalize()`](https://doctorbear-it.github.io/lassoboot/reference/lb_normalize.md)
+    for computed predictors and ratio responses; use
+    [`lb_grid()`](https://doctorbear-it.github.io/lassoboot/reference/lb_grid.md)
+    /
+    [`lb_plot_envelopes()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_envelopes.md)
+    for custom prediction grids.
+
+The methodological foundations described here justify the default
+choices and allow expert users to decide when non-defaults are
+appropriate. They are not prerequisites for using the package.
+
+------------------------------------------------------------------------
+
+## What `lassoboot` does NOT do
+
+- It does not provide post-selection inference in the sense of Lockhart
+  et al. (2014). The bootstrap CIs are frequency-bootstrap intervals,
+  not selectively-corrected pivots.
+- It does not model measurement error via a latent-variable structure
+  (errors- in-variables / EIV regression). It propagates declared
+  distributions forward.
+- It does not handle non-Gaussian responses. Gaussian linear lasso only.
+- It does not support the elastic net penalty (`alpha < 1`). Lasso only.
+
+See
+[`vignette("migration-to-v020")`](https://doctorbear-it.github.io/lassoboot/articles/migration-to-v020.md)
+for the v0.1 → v0.2.0 API migration table and
+[`vignette("measurement-uncertainty")`](https://doctorbear-it.github.io/lassoboot/articles/measurement-uncertainty.md)
+for the uncertainty declaration syntax.
+
+------------------------------------------------------------------------
+
+## References
+
+Carvalho, C. M., Polson, N. G., and Scott, J. G. (2010). The horseshoe
+estimator for sparse signals. *Biometrika*, **97**(2), 465–480.
+
+Cook, J. R. and Stefanski, L. A. (1994). Simulation extrapolation
+estimation in parametric measurement error models. *Journal of the
+American Statistical Association*, **89**(428), 1314–1328.
+
+Hans, C. (2009). Bayesian lasso regression. *Biometrika*, **96**(4),
+835–845.
+
+Ishwaran, H. and Rao, J. S. (2005). Spike and slab variable selection:
+frequentist and Bayesian strategies. *Annals of Statistics*, **33**(2),
+730–773.
+
+Joint Committee for Guides in Metrology (2008). *Evaluation of
+Measurement Data — Guide to the Expression of Uncertainty in Measurement
+(GUM).* JCGM 100:2008. BIPM, Sèvres.
+
+Lockhart, R., Taylor, J., Tibshirani, R. J., and Tibshirani, R. (2014).
+A significance test for the lasso. *Annals of Statistics*, **42**(2),
+413–468.
+
+Meinshausen, N. and Bühlmann, P. (2010). Stability selection. *Journal
+of the Royal Statistical Society: Series B*, **72**(4), 417–473.
+
+Park, T. and Casella, G. (2008). The Bayesian lasso. *Journal of the
+American Statistical Association*, **103**(482), 681–686.

@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,8 @@
 <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -78,6 +80,19 @@
 <span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div>
+<blockquote>
+<p><strong>Upgrading from v0.1?</strong> Column names in
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output changed in v0.2.0: <code>estimate</code> →
+<code>mean</code>, <code>conf.low</code>/<code>conf.high</code> →
+<code>q025</code>/<code>q975</code>, <code>std.error</code> →
+<code>sd</code>. The <code>conf.level</code> argument is now
+<code>probs = c(0.025, 0.975)</code>. Use
+<code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> instead of
+<code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code>. See
+<code><a href="../articles/migration-to-v020.html">vignette("migration-to-v020")</a></code> for the full API rename
+table, and <code><a href="../articles/methodological-foundations.html">vignette("methodological-foundations")</a></code> for the
+v0.2.0 conceptual framing.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="building-the-concrete-dataset-model">Building the concrete dataset model<a class="anchor" aria-label="anchor" href="#building-the-concrete-dataset-model"></a>
 </h2>
@@ -170,21 +185,21 @@ train/test splits.</p>
 confidence intervals, and three complementary diagnostics:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">td</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">td</span>, <span class="va">term</span>, <span class="va">estimate</span>, <span class="va">conf.low</span>, <span class="va">conf.high</span>, <span class="va">selection_prob</span>, <span class="va">stability_score</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">td</span>, <span class="va">term</span>, <span class="va">mean</span>, <span class="va">q025</span>, <span class="va">q975</span>, <span class="va">selection_prob</span>, <span class="va">stability_score</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">selection_prob</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 47 × 6</span></span></span>
-<span><span class="co">#&gt;    term               estimate conf.low conf.high selection_prob stability_score</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> clayHOH:alumina:D…  3.85<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span> -<span style="color: #BB0000;">1.75</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>   2.25<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.517           0.987</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> log(clayHOH):alum… -<span style="color: #BB0000;">1.38</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> -<span style="color: #BB0000;">1.13</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>   4.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.48            0.967</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> clayHOH:replaceme…  8.71<span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span> -<span style="color: #BB0000;">5.45</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span>   6.18<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>          0.4             0.987</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> replacement:D50     1.14<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span> -<span style="color: #BB0000;">2.33</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>   3.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>          0.303           0.957</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> clayHOH:SSA:D50     1.74<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span> -<span style="color: #BB0000;">1.16</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>   2.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.267           0.98 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> alumina             8.02<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">5.70</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>   1.23<span style="color: #949494;">e</span>+0          0.247           0.99 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> clayHOH:alumina:S…  2.14<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>  0   <span style="color: #949494;"> </span>     1.73<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>          0.247           0.967</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> D50                 1.63<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">5.70</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>   6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>          0.153           0.95 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> clayHOH:replaceme…  1.84<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span> -<span style="color: #BB0000;">1.80</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>   6.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>          0.137           0.97 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> clayHOH:SSA         2.45<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0   <span style="color: #949494;"> </span>     2.96<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.127           0.97 </span></span>
+<span><span class="co">#&gt;    term                     mean     q025    q975 selection_prob stability_score</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> clayHOH:alumina:D50   3.85<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span> -<span style="color: #BB0000;">1.75</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 2.25<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.517           0.987</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> log(clayHOH):alumin… -<span style="color: #BB0000;">1.38</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> -<span style="color: #BB0000;">1.13</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span> 4.43<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.48            0.967</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> clayHOH:replacement…  8.71<span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span> -<span style="color: #BB0000;">5.45</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span> 6.18<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>          0.4             0.987</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> replacement:D50       1.14<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span> -<span style="color: #BB0000;">2.33</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> 3.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>          0.303           0.957</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> clayHOH:SSA:D50       1.74<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span> -<span style="color: #BB0000;">1.16</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 2.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.267           0.98 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> alumina               8.02<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">5.70</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> 1.23<span style="color: #949494;">e</span>+0          0.247           0.99 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> clayHOH:alumina:SSA   2.14<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>  0   <span style="color: #949494;"> </span>   1.73<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>          0.247           0.967</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> D50                   1.63<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">5.70</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> 6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>          0.153           0.95 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> clayHOH:replacement…  1.84<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span> -<span style="color: #BB0000;">1.80</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span> 6.42<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>          0.137           0.97 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> clayHOH:SSA           2.45<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0   <span style="color: #949494;"> </span>   2.96<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.127           0.97 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 37 more rows</span></span></span></code></pre></div>
 <div class="section level3">
 <h3 id="selection-probability">1. Selection probability<a class="anchor" aria-label="anchor" href="#selection-probability"></a>
@@ -201,11 +216,20 @@ point for exploratory analysis. Use <code><a href="../reference/lb_is_significan
 filter:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">td</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="../reference/lb_is_significant.html">lb_is_significant</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/pick.html" class="external-link">pick</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"selection"</span>, threshold <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: There was 1 warning in `filter()`.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> In argument: `lb_is_significant(pick(everything()), method = "selection",</span></span>
+<span><span class="co">#&gt;   threshold = 0.5)`.</span></span>
+<span><span class="co">#&gt; Caused by warning:</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> `lb_is_significant()` is deprecated.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Use `lb_filter_stable()` with named arguments instead:</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `lb_filter_stable(td, min_selection_prob = 0.5)`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `lb_filter_stable(td, min_stability_score = 0.8)`</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> `lb_filter_stable(td, quantiles_exclude_zero = TRUE)`</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 9</span></span></span>
-<span><span class="co">#&gt;   term      estimate estimate_median std.error conf.low conf.high selection_prob</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> clayHOH:…  3.85<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>               0 0.000<span style="text-decoration: underline;">095</span>7 -<span style="color: #BB0000;">1.75</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>  0.000<span style="text-decoration: underline;">225</span>          0.517</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   term            mean median      sd     q025    q975 selection_prob n_selected</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> clayHOH:alu… 3.85<span style="color: #949494;">e</span><span style="color: #BB0000;">-6</span>      0 9.57<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span> -<span style="color: #BB0000;">1.75</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span> 2.25<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>          0.517        155</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="ci-exclusion-of-zero">2. CI exclusion of zero<a class="anchor" aria-label="anchor" href="#ci-exclusion-of-zero"></a>
@@ -221,9 +245,8 @@ alone.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">td</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="../reference/lb_is_significant.html">lb_is_significant</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/pick.html" class="external-link">pick</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"ci"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 0 × 9</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 variables: term &lt;chr&gt;, estimate &lt;dbl&gt;, estimate_median &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   std.error &lt;dbl&gt;, conf.low &lt;dbl&gt;, conf.high &lt;dbl&gt;, selection_prob &lt;dbl&gt;,</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;">#   n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 9 variables: term &lt;chr&gt;, mean &lt;dbl&gt;, median &lt;dbl&gt;, sd &lt;dbl&gt;, q025 &lt;dbl&gt;,</span></span></span>
+<span><span class="co">#&gt; <span style="color: #949494;">#   q975 &lt;dbl&gt;, selection_prob &lt;dbl&gt;, n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="stability-score">3. Stability score<a class="anchor" aria-label="anchor" href="#stability-score"></a>
@@ -241,20 +264,20 @@ in a publication, require <code>stability_score &gt; 0.8</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">td</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="../reference/lb_is_significant.html">lb_is_significant</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/pick.html" class="external-link">pick</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"stability"</span>, threshold <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 47 × 9</span></span></span>
-<span><span class="co">#&gt;    term     estimate estimate_median std.error conf.low conf.high selection_prob</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> clayHOH   8.87<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>               0   3.84<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>  0        0.014<span style="text-decoration: underline;">0</span>          0.107  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> log(cla…  1.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>               0   8.39<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>  0        2.56            0.04   </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> replace… -<span style="color: #BB0000;">1.29</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>               0   2.44<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">0.003</span><span style="color: #BB0000; text-decoration: underline;">28</span>  0               0.046<span style="text-decoration: underline;">7</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> alumina   8.02<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>               0   4.24<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> -<span style="color: #BB0000;">0.570</span>    1.23            0.247  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> SSA       1.66<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>               0   8.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>  0        0.206           0.103  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> D50       1.63<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>               0   2.59<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> -<span style="color: #BB0000;">0.570</span>    0.676           0.153  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> clayHOH…  4.95<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>               0   3.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0        0               0.036<span style="text-decoration: underline;">7</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> log(cla…  3.72<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>               0   5.18<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>  0        0               0.013<span style="text-decoration: underline;">3</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> clayHOH…  1.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>               0   6.80<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0        0.000<span style="text-decoration: underline;">232</span>        0.103  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> log(cla…  4.30<span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span>               0   7.45<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>  0        0               0.003<span style="text-decoration: underline;">33</span></span></span>
+<span><span class="co">#&gt;    term           mean median      sd     q025    q975 selection_prob n_selected</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> clayHOH     8.87<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>      0 3.84<span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>  0       1.40<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>        0.107           32</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> log(clayH…  1.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>      0 8.39<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>  0       2.56<span style="color: #949494;">e</span>+0        0.04            12</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> replaceme… -<span style="color: #BB0000;">1.29</span><span style="color: #949494;">e</span><span style="color: #BB0000;">-3</span>      0 2.44<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> -<span style="color: #BB0000;">0.003</span><span style="color: #BB0000; text-decoration: underline;">28</span> 0   <span style="color: #949494;"> </span>          0.046<span style="text-decoration: underline;">7</span>          14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> alumina     8.02<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>      0 4.24<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> -<span style="color: #BB0000;">0.570</span>   1.23<span style="color: #949494;">e</span>+0        0.247           74</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> SSA         1.66<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>      0 8.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>  0       2.06<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>        0.103           31</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> D50         1.63<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span>      0 2.59<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span> -<span style="color: #BB0000;">0.570</span>   6.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-1</span>        0.153           46</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> clayHOH:r…  4.95<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>      0 3.29<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0       0   <span style="color: #949494;"> </span>          0.036<span style="text-decoration: underline;">7</span>          11</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> log(clayH…  3.72<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>      0 5.18<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>  0       0   <span style="color: #949494;"> </span>          0.013<span style="text-decoration: underline;">3</span>           4</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> clayHOH:a…  1.70<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>      0 6.80<span style="color: #949494;">e</span><span style="color: #BB0000;">-5</span>  0       2.32<span style="color: #949494;">e</span><span style="color: #BB0000;">-4</span>        0.103           31</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> log(clayH…  4.30<span style="color: #949494;">e</span><span style="color: #BB0000;">-8</span>      0 7.45<span style="color: #949494;">e</span><span style="color: #BB0000;">-7</span>  0       0   <span style="color: #949494;"> </span>          0.003<span style="text-decoration: underline;">33</span>          1</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 37 more rows</span></span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="when-to-use-each">When to use each<a class="anchor" aria-label="anchor" href="#when-to-use-each"></a>
@@ -296,21 +319,21 @@ option in <code><a href="https://generics.r-lib.org/reference/tidy.html" class="
 “2-standard-deviation change” scale (Gelman 2008):</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">boot</span>, scale <span class="op">=</span> <span class="st">"gelman"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">term</span>, <span class="va">estimate</span>, <span class="va">conf.low</span>, <span class="va">conf.high</span>, <span class="va">selection_prob</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">estimate</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">term</span>, <span class="va">mean</span>, <span class="va">q025</span>, <span class="va">q975</span>, <span class="va">selection_prob</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">mean</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 47 × 5</span></span></span>
-<span><span class="co">#&gt;    term                estimate conf.low conf.high selection_prob</span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> alumina               0.276    -<span style="color: #BB0000;">1.96</span>      4.22          0.247 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> clayHOH               0.204     0         3.22          0.107 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> SSA:D50              -<span style="color: #BB0000;">0.140</span>    -<span style="color: #BB0000;">1.98</span>      0             0.066<span style="text-decoration: underline;">7</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> SSA                   0.129     0         1.60          0.103 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> clayHOH:SSA:D50       0.117    -<span style="color: #BB0000;">0.776</span>     1.62          0.267 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> log(clayHOH)          0.115     0         2.56          0.04  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> D50                   0.061<span style="text-decoration: underline;">2</span>   -<span style="color: #BB0000;">2.14</span>      2.54          0.153 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> replacement:D50       0.060<span style="text-decoration: underline;">8</span>   -<span style="color: #BB0000;">1.25</span>      1.69          0.303 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> replacement:SSA:D50  -<span style="color: #BB0000;">0.054</span><span style="color: #BB0000; text-decoration: underline;">9</span>   -<span style="color: #BB0000;">0.834</span>     0             0.117 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> clayHOH:SSA           0.043<span style="text-decoration: underline;">7</span>    0         0.529         0.127 </span></span>
+<span><span class="co">#&gt;    term                   mean   q025  q975 selection_prob</span></span>
+<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                 <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> alumina              0.276  -<span style="color: #BB0000;">1.96</span>  4.22          0.247 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> clayHOH              0.204   0     3.22          0.107 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> SSA:D50             -<span style="color: #BB0000;">0.140</span>  -<span style="color: #BB0000;">1.98</span>  0             0.066<span style="text-decoration: underline;">7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> SSA                  0.129   0     1.60          0.103 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> clayHOH:SSA:D50      0.117  -<span style="color: #BB0000;">0.776</span> 1.62          0.267 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> log(clayHOH)         0.115   0     2.56          0.04  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> D50                  0.061<span style="text-decoration: underline;">2</span> -<span style="color: #BB0000;">2.14</span>  2.54          0.153 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> replacement:D50      0.060<span style="text-decoration: underline;">8</span> -<span style="color: #BB0000;">1.25</span>  1.69          0.303 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> replacement:SSA:D50 -<span style="color: #BB0000;">0.054</span><span style="color: #BB0000; text-decoration: underline;">9</span> -<span style="color: #BB0000;">0.834</span> 0             0.117 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> clayHOH:SSA          0.043<span style="text-decoration: underline;">7</span>  0     0.529         0.127 </span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 37 more rows</span></span></span></code></pre></div>
 <p>A coefficient of 0.15 on this scale means: changing the predictor
 from its mean to one SD above its mean changes the predicted response by
@@ -395,13 +418,81 @@ grid values to the observed range by default. Pass
 extrapolated region clearly in the final plot.</p>
 </div>
 <div class="section level2">
+<h2 id="confidence-bands-vs--prediction-bands">Confidence bands vs. prediction bands<a class="anchor" aria-label="anchor" href="#confidence-bands-vs--prediction-bands"></a>
+</h2>
+<p><code><a href="../reference/lb_grid.html">lb_grid()</a></code> and <code><a href="../reference/lb_plot_prediction.html">lb_plot_prediction()</a></code> support
+two types of uncertainty interval for the fitted response, selected with
+the <code>interval</code> argument.</p>
+<p><strong>Confidence band</strong>
+(<code>interval = "confidence"</code>, the default): captures
+uncertainty in the <em>mean response</em> — how precisely the regression
+surface is estimated from the data. It reflects only variability in the
+bootstrap coefficient estimates. Confidence bands narrow as <em>n</em>
+grows and the model becomes better determined, but they do
+<strong>not</strong> account for the scatter of individual observations
+around the trend.</p>
+<p><strong>Prediction band</strong>
+(<code>interval = "prediction"</code>): answers the question <em>where
+will a new individual measurement fall?</em> It adds the residual
+scatter <em>σ̂</em> (estimated inside <code><a href="../reference/lb_bootstrap.html">lb_bootstrap()</a></code>) on top
+of the confidence envelope. A new observation drawn from the same
+process will fall outside the prediction band only with probability
+equal to the nominal level — regardless of sample size.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Confidence band: uncertainty in the mean trend</span></span>
+<span><span class="fu"><a href="../reference/lb_plot_prediction.html">lb_plot_prediction</a></span><span class="op">(</span><span class="va">boot</span>, focal <span class="op">=</span> <span class="st">"clayHOH"</span>, n <span class="op">=</span> <span class="fl">60</span>, interval <span class="op">=</span> <span class="st">"confidence"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Prediction band: where a new data point will fall</span></span>
+<span><span class="fu"><a href="../reference/lb_plot_prediction.html">lb_plot_prediction</a></span><span class="op">(</span><span class="va">boot</span>, focal <span class="op">=</span> <span class="st">"clayHOH"</span>, n <span class="op">=</span> <span class="fl">60</span>, interval <span class="op">=</span> <span class="st">"prediction"</span><span class="op">)</span></span></code></pre></div>
+<p>The additional width of the prediction band over the confidence band
+is approximately <code>σ̂ × √(1 + 1/n)</code> at the median predictor
+values. When the model is well-determined (large <em>n</em>, high
+selection probability) but has genuine residual scatter
+(e.g. between-batch variation in cement production), prediction bands
+can be substantially wider than confidence bands. That difference is the
+honest answer to “how repeatable is a new test?”</p>
+<p><code><a href="../reference/lb_plot_envelopes.html">lb_plot_envelopes()</a></code> (new in v0.2.0) plots both
+simultaneously: a wider, lower-opacity prediction ribbon behind a
+narrower confidence ribbon. Use <code>interval = "both"</code> to
+activate this overlay:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lb_plot_envelopes.html">lb_plot_envelopes</a></span><span class="op">(</span><span class="va">boot</span>, focal <span class="op">=</span> <span class="st">"clayHOH"</span>, interval <span class="op">=</span> <span class="st">"both"</span>, n <span class="op">=</span> <span class="fl">60</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Practical guidance:</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Plotting goal</th>
+<th>Recommended interval</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>“How well do we know the mean trend?”</td>
+<td><code>"confidence"</code></td>
+</tr>
+<tr class="even">
+<td>“Where will a new measurement fall?”</td>
+<td><code>"prediction"</code></td>
+</tr>
+<tr class="odd">
+<td>Communicate both to a broad audience</td>
+<td>
+<code>"both"</code> in <code><a href="../reference/lb_plot_envelopes.html">lb_plot_envelopes()</a></code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
 <h2 id="nested-cross-validation-lb_folds_nested">Nested cross-validation: <code>lb_folds_nested()</code><a class="anchor" aria-label="anchor" href="#nested-cross-validation-lb_folds_nested"></a>
 </h2>
 <p>When the data has a nested structure — multiple replicates per
 mixture, each mixture at multiple ages — a plain k-fold CV can leak
 mixture identity into the test fold. Use <code><a href="../reference/lb_folds_nested.html">lb_folds_nested()</a></code>
 to prevent this:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spec_nested</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/lb_spec.html">lb_spec</a></span><span class="op">(</span></span>
 <span>    <span class="va">strength_MPa</span> <span class="op">~</span> <span class="op">(</span><span class="va">clayHOH</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">clayHOH</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="va">replacement</span> <span class="op">*</span> <span class="va">alumina</span>,</span>
@@ -427,7 +518,7 @@ effect is largest in datasets where some combinations are rarer
 <div class="section level2">
 <h2 id="model-complexity">Model complexity<a class="anchor" aria-label="anchor" href="#model-complexity"></a>
 </h2>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">boot</span>, type <span class="op">=</span> <span class="st">"complexity"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="interpreting-results_files/figure-html/complexity-1.png" class="r-plt" alt="" width="672"></p>
 <p>The complexity histogram shows the distribution of how many

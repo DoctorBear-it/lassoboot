@@ -1,6 +1,6 @@
-# Plot bootstrap coefficient estimates with confidence intervals
+# Plot bootstrap coefficient distribution with quantile intervals
 
-Produces a horizontal forest plot of bootstrap coefficient estimates and
+Produces a horizontal forest plot of bootstrap coefficient means and
 quantile intervals, ordered by point estimate. Color encodes selection
 probability.
 
@@ -10,7 +10,7 @@ probability.
 lb_plot_coefficients(
   x,
   scale = c("raw", "gelman"),
-  filter = c("all", "significant", "selected"),
+  filter = c("all", "quantiles_exclude_zero", "selected", "significant"),
   ...
 )
 ```
@@ -27,8 +27,10 @@ lb_plot_coefficients(
 
 - filter:
 
-  `"all"` (default), `"significant"` (CI excludes zero), or `"selected"`
-  (selection_prob \> 0.5).
+  `"all"` (default), `"quantiles_exclude_zero"` (95% quantile interval
+  excludes zero), or `"selected"` (selection_prob \> 0.5). The
+  deprecated value `"significant"` is an alias for
+  `"quantiles_exclude_zero"` and emits a one-time warning.
 
 - ...:
 

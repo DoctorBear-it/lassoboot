@@ -13,7 +13,7 @@ returns .fitted, .lower, .upper."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,8 @@ returns .fitted, .lower, .upper."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -54,7 +56,16 @@ returns <code>.fitted</code>, <code>.lower</code>, <code>.upper</code>.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lb_grid</span><span class="op">(</span><span class="va">boot</span>, <span class="va">focal</span>, n <span class="op">=</span> <span class="fl">100</span>, at <span class="op">=</span> <span class="st">"observed"</span>, extrapolate <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lb_grid</span><span class="op">(</span></span>
+<span>  <span class="va">boot</span>,</span>
+<span>  <span class="va">focal</span>,</span>
+<span>  n <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  at <span class="op">=</span> <span class="st">"observed"</span>,</span>
+<span>  extrapolate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  clip_to_observed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  interval <span class="op">=</span> <span class="st">"confidence"</span>,</span>
+<span>  level <span class="op">=</span> <span class="fl">0.95</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -83,10 +94,31 @@ unique observed combinations), <code>"median"</code>, or a named list of values.
 <dd><p>Logical. Allow grid points outside the observed focal
 range? User must opt in. Default <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-clip-to-observed">clip_to_observed<a class="anchor" aria-label="anchor" href="#arg-clip-to-observed"></a></dt>
+<dd><p>Logical or <code>NULL</code>. When <code>NULL</code> (default), resolves to
+<code>TRUE</code> when <code>at = "observed"</code> and <code>FALSE</code> otherwise. When <code>TRUE</code>, clips the
+focal predictor range <strong>per non-focal combination</strong> to the range observed in
+the original data for rows matching that combination. This prevents the grid
+from showing predictions in regions where no measurements of that type were
+made. Ignored (with a warning) when <code>at = "median"</code> or <code>at</code> is a list.</p></dd>
+
+
+<dt id="arg-interval">interval<a class="anchor" aria-label="anchor" href="#arg-interval"></a></dt>
+<dd><p>One of <code>"confidence"</code> (default), <code>"prediction"</code>, or <code>"none"</code>.
+Passed to <code><a href="predict.lb_boot.html">predict.lb_boot()</a></code>. <code>"confidence"</code> returns the quantiles of the
+bootstrap fitted-mean distribution; <code>"prediction"</code> additionally incorporates
+residual scatter.</p></dd>
+
+
+<dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
+<dd><p>Confidence/prediction level. Default <code>0.95</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with the grid columns plus <code>.fitted</code>, <code>.lower</code>, <code>.upper</code>.</p>
+    <p>A tibble with the grid columns plus <code>.fitted</code> and, when
+<code>interval != "none"</code>, <code>.lower</code> and <code>.upper</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

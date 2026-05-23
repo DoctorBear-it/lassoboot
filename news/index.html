@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,8 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -38,6 +40,51 @@
       <small>Source: <a href="https://github.com/DoctorBear-it/lassoboot/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="lassoboot-020">lassoboot 0.2.0<a class="anchor" aria-label="anchor" href="#lassoboot-020"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> column names have changed — there is no backward-compatibility aliasing. Update all code that references old names:
+<ul><li>
+<code>estimate</code> → <code>mean</code>
+</li>
+<li>
+<code>estimate_median</code> → <code>median</code>
+</li>
+<li>
+<code>std.error</code> → <code>sd</code>
+</li>
+<li>
+<code>conf.low</code> → <code>q025</code> (or <code>q</code> + quantile × 1000, zero-padded to 3 digits)</li>
+<li>
+<code>conf.high</code> → <code>q975</code>
+</li>
+</ul></li>
+<li>
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> argument <code>conf.level</code> replaced by <code>probs</code> (a numeric vector of quantile probabilities, e.g. <code>probs = c(0.025, 0.975)</code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li><p><strong>Prediction intervals.</strong> <code><a href="../reference/predict.lb_boot.html">predict.lb_boot()</a></code>, <code><a href="../reference/lb_grid.html">lb_grid()</a></code>, <code><a href="../reference/lb_plot_prediction.html">lb_plot_prediction()</a></code>, and the new <code><a href="../reference/lb_plot_envelopes.html">lb_plot_envelopes()</a></code> all accept <code>interval = "confidence"</code> (bootstrap quantile envelope around the mean response, the default) or <code>interval = "prediction"</code> (adds residual scatter ε ~ N(0, σ̂²) to each bootstrap draw). The sigma used for prediction draws is stored per-iteration as <code>boot$sigma_hats</code>.</p></li>
+<li><p><strong><code><a href="../reference/lb_plot_envelopes.html">lb_plot_envelopes()</a></code>.</strong> New high-level plotting function for prediction envelopes. Supports <code>group</code>, <code>facet</code>, <code>hlines</code>, <code>xlim</code>/<code>ylim</code>, and <code>interval = "both"</code> for overlaid confidence + prediction ribbons. Maps the <code>group</code> variable to color, fill, and linetype simultaneously.</p></li>
+<li><p><strong>Dual precision levels in <code><a href="../reference/lb_uncertainty.html">lb_uncertainty()</a></code>.</strong> Each uncertainty entry now carries <code>value_single</code> (within-lab) and <code>value_multi</code> (between-lab) columns. Declare both via <code>std(value, multi = ..., source = ...)</code>. Legacy single-column <code>value</code> tibbles are automatically backfilled and remain fully compatible. Select the active level with <code>lb_control(precision = ...)</code>.</p></li>
+<li><p><strong><code>lb_control(precision = ...)</code>.</strong> New argument (<code>"single"</code> or <code>"multi"</code>, default <code>"single"</code>) routes the bootstrap to within-lab or between-lab uncertainty values declared in <code><a href="../reference/lb_uncertainty.html">lb_uncertainty()</a></code>.</p></li>
+<li><p><strong><code><a href="../reference/lb_normalize.html">lb_normalize()</a></code> exported.</strong> Previously internal; now exported with full documentation. Registers a ratio response (measured / reference) and rewrites the formula LHS so that each bootstrap iteration correctly propagates uncertainty through the ratio.</p></li>
+<li><p><strong><code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code>.</strong> New primary API for filtering <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output. Accepts <code>min_selection_prob</code>, <code>min_stability_score</code>, and <code>quantiles_exclude_zero</code> (any combination, AND-ed). Replaces <code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code>, which is retained as a deprecated wrapper.</p></li>
+<li><p><strong><code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code> deprecated.</strong> Use <code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> instead. The old function still works but emits a one-time deprecation warning.</p></li>
+<li><p><strong>New vignette: <code>methodological-foundations</code>.</strong> Covers the v0.2.0 conceptual reframe (prediction envelopes vs. parameter inference), the full column-rename migration table, the <code>probs</code> / <code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> API, dual precision levels, and the confidence vs. prediction band taxonomy.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-and-improvements-0-2-0">Bug fixes and improvements<a class="anchor" aria-label="anchor" href="#bug-fixes-and-improvements-0-2-0"></a></h3>
+<ul><li>
+<code><a href="../reference/lb_normalize.html">lb_normalize()</a></code> now materializes the response column on <code>spec$data</code> before registering the derive, fixing a subtle evaluation-order bug when the response column did not yet exist in the data frame.</li>
+<li>
+<code>.estimate_sigma()</code> gains an explicit <code>lambda</code> argument; per-iteration sigma estimates are now stored as <code>boot$sigma_hats</code> (length-<em>B</em> numeric vector) and used when constructing prediction intervals.</li>
+<li>
+<code><a href="../reference/lb_plot_coefficients.html">lb_plot_coefficients()</a></code>: axis label updated from “Bootstrap coefficient estimate” to “Bootstrap coefficient (mean)”; the <code>filter</code> argument now accepts <code>"quantiles_exclude_zero"</code> as the preferred name for what was previously <code>"significant"</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="lassoboot-010">lassoboot 0.1.0<a class="anchor" aria-label="anchor" href="#lassoboot-010"></a></h2>
 <p>First CRAN release.</p>

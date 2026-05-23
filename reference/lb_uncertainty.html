@@ -11,7 +11,7 @@ inside the call."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ inside the call."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -61,13 +63,14 @@ inside the call.</p>
 <dl><dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Named arguments <code>column = std(value)</code>, <code>column = cov(value)</code>, or
 <code>column = rel(value)</code>. Alternatively, a single pre-built tibble with
-columns <code>term</code>, <code>type</code>, <code>value</code>, and optionally <code>source</code>.</p></dd>
+columns <code>term</code>, <code>type</code>, and either <code>value</code> (backfilled for single/multi)
+or <code>value_single</code> and <code>value_multi</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with columns <code>term</code> (chr), <code>type</code> (chr: <code>"std"/"cov"/"rel"</code>),
-<code>value</code> (dbl, &gt;= 0), <code>source</code> (chr).</p>
+<code>value_single</code> (dbl, &gt;= 0), <code>value_multi</code> (dbl, &gt;= 0), <code>source</code> (chr).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -76,12 +79,13 @@ columns <code>term</code>, <code>type</code>, <code>value</code>, and optionally
 <h3 id="helper-constructors">Helper constructors<a class="anchor" aria-label="anchor" href="#helper-constructors"></a></h3>
 
 
-<p>Inside <code>lb_uncertainty(...)</code> calls, three short helpers are available:</p><ul><li><p><code>std(value, source)</code> — absolute standard deviation in the units of the
-column.</p></li>
-<li><p><code>cov(value, source)</code> — coefficient of variation as a <strong>percentage</strong>
-(<code>cov(4.0, ...)</code> means 4%, not 400%).</p></li>
-<li><p><code>rel(value, source)</code> — relative standard deviation as a <strong>fraction</strong>
-(<code>rel(0.04, ...)</code> is equivalent to <code>cov(4.0, ...)</code>).</p></li>
+<p>Inside <code>lb_uncertainty(...)</code> calls, three short helpers are available:</p><ul><li><p><code>std(value, multi = NULL, source)</code> — absolute standard deviation in the
+units of the column. <code>value</code> is the single-operator (within-lab) precision;
+<code>multi</code> (optional) is the multi-laboratory reproducibility.</p></li>
+<li><p><code>cov(value, multi = NULL, source)</code> — coefficient of variation as a
+<strong>percentage</strong> (<code>cov(4.0, ...)</code> means 4%, not 400%).</p></li>
+<li><p><code>rel(value, multi = NULL, source)</code> — relative standard deviation as a
+<strong>fraction</strong> (<code>rel(0.04, ...)</code> is equivalent to <code>cov(4.0, ...)</code>).</p></li>
 </ul><p>These helpers are <strong>only available inside <code>lb_uncertainty()</code></strong> — they do not
 appear in the package namespace and do not shadow <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">stats::cov()</a></code> or any
 other function globally. Internally, <code>lb_uncertainty()</code> evaluates its
@@ -89,21 +93,47 @@ arguments in a child environment that defines <code>std</code>, <code>cov</code>
 outside that call, the names resolve normally.</p>
 </div>
 
+<div class="section">
+<h3 id="multi-laboratory-precision">Multi-laboratory precision<a class="anchor" aria-label="anchor" href="#multi-laboratory-precision"></a></h3>
+
+
+<p>Supply the named <code>multi</code> argument to declare two precision levels:</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="fu"><a href="../reference/lb_uncertainty.html">lb_uncertainty</a></span><span class="op">(</span></span>
+<span>  alumina <span class="op">=</span> <span class="fu">std</span><span class="op">(</span><span class="fl">0.071</span>, multi <span class="op">=</span> <span class="fl">0.213</span>, source <span class="op">=</span> <span class="st">"ASTM C114"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre><p></p></div>
+<p>Switch between levels with <code>lb_control(precision = "single")</code> (default) or
+<code>lb_control(precision = "multi")</code>.</p>
+<p>v0.1 calls like <code>std(0.071, "ASTM C114")</code> continue to work unchanged
+and set <code>multi = single = 0.071</code>.</p>
+</div>
+
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">lb_uncertainty</span><span class="op">(</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Single precision level (v0.1 compatible)</span></span></span>
+<span class="r-in"><span><span class="fu">lb_uncertainty</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  alumina  <span class="op">=</span> <span class="fu">std</span><span class="op">(</span><span class="fl">0.071</span>, <span class="st">"ASTM C114"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  SSA      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov</a></span><span class="op">(</span><span class="fl">0.56</span>,  <span class="st">"Mfr certificate of analysis"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  strength <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov</a></span><span class="op">(</span><span class="fl">4.0</span>,   <span class="st">"ASTM C109 §10.3 single-operator"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  strength <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov</a></span><span class="op">(</span><span class="fl">4.0</span>,   <span class="st">"ASTM C109 single-operator"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 4</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   term     type  value source                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                          </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> alumina  std   0.071 ASTM C114                      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> SSA      cov   0.56  Mfr certificate of analysis    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> strength cov   4     ASTM C109 §10.3 single-operator</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   term     type  value_single value_multi source                     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> alumina  std          0.071       0.071 ASTM C114                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> SSA      cov          0.56        0.56  Mfr certificate of analysis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> strength cov          4           4     ASTM C109 single-operator  </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Two precision levels (v0.2.0+)</span></span></span>
+<span class="r-in"><span><span class="fu">lb_uncertainty</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  alumina  <span class="op">=</span> <span class="fu">std</span><span class="op">(</span><span class="fl">0.071</span>, multi <span class="op">=</span> <span class="fl">0.213</span>, source <span class="op">=</span> <span class="st">"ASTM C114"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  strength <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov</a></span><span class="op">(</span><span class="fl">4.0</span>,   multi <span class="op">=</span> <span class="fl">7.8</span>,   source <span class="op">=</span> <span class="st">"ASTM C109"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 5</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   term     type  value_single value_multi source   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> alumina  std          0.071       0.213 ASTM C114</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> strength cov          4           7.8   ASTM C109</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

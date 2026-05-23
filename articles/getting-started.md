@@ -5,6 +5,20 @@
 library(lassoboot)
 ```
 
+> **Upgrading from v0.1?** Column names in
+> [`tidy()`](https://generics.r-lib.org/reference/tidy.html) output
+> changed in v0.2.0: `estimate` → `mean`, `conf.low`/`conf.high` →
+> `q025`/`q975`, `std.error` → `sd`. The `conf.level` argument is now
+> `probs = c(0.025, 0.975)`. Use
+> [`lb_filter_stable()`](https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.md)
+> instead of
+> [`lb_is_significant()`](https://doctorbear-it.github.io/lassoboot/reference/lb_is_significant.md).
+> See
+> [`vignette("migration-to-v020")`](https://doctorbear-it.github.io/lassoboot/articles/migration-to-v020.md)
+> for the full API rename table, and
+> [`vignette("methodological-foundations")`](https://doctorbear-it.github.io/lassoboot/articles/methodological-foundations.md)
+> for the v0.2.0 conceptual framing.
+
 ## What this package does
 
 `lassoboot` answers the question: *which of my predictors actually
@@ -94,7 +108,7 @@ boot
 #>   sigma_hat:   0.6104  (method: refit)
 #> <lb_boot>
 #>   B:           200 iterations
-#>   elapsed:     1.3s
+#>   elapsed:     1.8s
 #>   path stored: TRUE
 #>   models kept: FALSE
 ```
@@ -121,21 +135,21 @@ library(dplyr)
 td <- tidy(boot)
 td
 #> # A tibble: 4 × 9
-#>   term  estimate estimate_median std.error conf.low conf.high selection_prob
-#>   <chr>    <dbl>           <dbl>     <dbl>    <dbl>     <dbl>          <dbl>
-#> 1 x1      2.02            2.02      0.0794   1.86       2.18           1    
-#> 2 x2      0.782           0.775     0.0709   0.665      0.920          1    
-#> 3 x3      0.162           0.164     0.0832   0.0197     0.316          0.995
-#> 4 x4      0.0917          0.0884    0.0833  -0.0458     0.262          0.965
-#> # ℹ 2 more variables: n_selected <int>, stability_score <dbl>
+#>   term    mean median     sd    q025  q975 selection_prob n_selected
+#>   <chr>  <dbl>  <dbl>  <dbl>   <dbl> <dbl>          <dbl>      <int>
+#> 1 x1    2.02   2.02   0.0794  1.86   2.18           1            200
+#> 2 x2    0.782  0.775  0.0709  0.665  0.920          1            200
+#> 3 x3    0.162  0.164  0.0832  0.0197 0.316          0.995        199
+#> 4 x4    0.0917 0.0884 0.0833 -0.0458 0.262          0.965        193
+#> # ℹ 1 more variable: stability_score <dbl>
 ```
 
 Each row is one predictor. The key columns:
 
 | Column | Meaning |
 |----|----|
-| `estimate` | Bootstrap mean coefficient (zeros included for unselected iterations) |
-| `conf.low` / `conf.high` | Bootstrap quantile interval (default 95 %) |
+| `mean` | Bootstrap mean coefficient (zeros included for unselected iterations) |
+| `q025` / `q975` | Bootstrap quantile interval (default 2.5 % and 97.5 % quantiles) |
 | `selection_prob` | Fraction of *B* iterations in which this term was selected |
 | `stability_score` | Max selection probability across the lambda path |
 
@@ -165,27 +179,20 @@ The dashed line at 0.5 is the conventional “majority selection”
 threshold. Terms above it are selected in more than half of bootstrap
 iterations.
 
-### Filtering significant terms
+### Filtering stable terms
 
 ``` r
 
-tidy(boot) |>
-  filter(lb_is_significant(pick(everything()), method = "selection", threshold = 0.5))
-#> # A tibble: 4 × 9
-#>   term  estimate estimate_median std.error conf.low conf.high selection_prob
-#>   <chr>    <dbl>           <dbl>     <dbl>    <dbl>     <dbl>          <dbl>
-#> 1 x1      2.02            2.02      0.0794   1.86       2.18           1    
-#> 2 x2      0.782           0.775     0.0709   0.665      0.920          1    
-#> 3 x3      0.162           0.164     0.0832   0.0197     0.316          0.995
-#> 4 x4      0.0917          0.0884    0.0833  -0.0458     0.262          0.965
-#> # ℹ 2 more variables: n_selected <int>, stability_score <dbl>
+lb_filter_stable(tidy(boot), min_selection_prob = 0.5)
+#> [1] TRUE TRUE TRUE TRUE
 ```
 
-[`lb_is_significant()`](https://doctorbear-it.github.io/lassoboot/reference/lb_is_significant.md)
-is a convenience predicate for use inside
-[`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html).
-The three available methods — `"ci"` (CI excludes zero), `"selection"`,
-and `"stability"` — are discussed in
+[`lb_filter_stable()`](https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.md)
+filters a [`tidy()`](https://generics.r-lib.org/reference/tidy.html)
+data frame to rows meeting one or more stability criteria. Pass
+`min_selection_prob`, `min_stability_score`, or
+`quantiles_exclude_zero = TRUE` in any combination. The full set of
+criteria is discussed in
 [`vignette("interpreting-results")`](https://doctorbear-it.github.io/lassoboot/articles/interpreting-results.md).
 
 ## The `concrete` dataset
@@ -239,7 +246,7 @@ choice of sigma method is covered in
 
 - [`vignette("measurement-uncertainty")`](https://doctorbear-it.github.io/lassoboot/articles/measurement-uncertainty.md)
   — the three uncertainty types, derived quantities, normalization, and
-  how sigma method affects CI coverage.
+  how `sigma_method` affects prediction-band width.
 - [`vignette("interpreting-results")`](https://doctorbear-it.github.io/lassoboot/articles/interpreting-results.md)
   — selection probability vs. CI vs. stability score, correlated
   predictors, prediction grids, and nested cross-validation.

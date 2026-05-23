@@ -11,7 +11,7 @@ uncertainty argument of lb_spec()."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,8 @@ uncertainty argument of lb_spec()."></head><body>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -56,7 +58,8 @@ predictor and response columns in <a href="concrete.html">concrete</a>. Pass dir
 
     <div class="section level2">
     <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>A tibble with 5 rows and 4 variables:</p><dl><dt>term</dt>
+    <p>A tibble with 5 rows and 4 variables (legacy single-precision format;
+compatible with all <code>lassoboot</code> versions):</p><dl><dt>term</dt>
 <dd><p>Character. Column name in <a href="concrete.html">concrete</a> the uncertainty applies
 to.</p></dd>
 
@@ -66,7 +69,10 @@ deviation, in the units of <code>term</code>) or <code>"cov"</code> (coefficient
 variation as a percentage).</p></dd>
 
 <dt>value</dt>
-<dd><p>Numeric. Uncertainty magnitude.</p></dd>
+<dd><p>Numeric. Single-operator (within-lab) uncertainty magnitude.
+In v0.2.0+, use <code><a href="lb_uncertainty.html">lb_uncertainty()</a></code> with the <code>multi</code> argument to declare
+two precision levels (<code>value_single</code>, <code>value_multi</code>). This dataset uses
+the legacy single-column format which is backward-compatible.</p></dd>
 
 <dt>source</dt>
 <dd><p>Character. Normative source documenting the uncertainty.</p></dd>

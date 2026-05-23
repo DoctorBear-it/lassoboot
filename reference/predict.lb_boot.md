@@ -15,7 +15,7 @@ predict(
   object,
   newdata = NULL,
   type = c("response", "coef"),
-  interval = c("none", "confidence"),
+  interval = c("none", "confidence", "prediction"),
   level = 0.95,
   B_sub = NULL,
   ...
@@ -39,11 +39,23 @@ predict(
 
 - interval:
 
-  `"none"` (default) or `"confidence"`.
+  One of `"none"` (default), `"confidence"`, or `"prediction"`.
+
+  - `"confidence"`: quantiles of the bootstrap **fitted-mean**
+    distribution — where the model's mean function lives given
+    measurement-uncertainty perturbation. This is the headline
+    scientific output for inferring relationships.
+
+  - `"prediction"`: confidence band **plus** residual draws ε ~ N(0, σ̂²)
+    — describes where a single new observation at X would land. Uses
+    per-iteration σ̂ when available (stored in `boot$sigma_hats`); falls
+    back to `boot$fit$sigma_hat` with a one-time informative message.
+
+  - `"none"`: `.fitted` only.
 
 - level:
 
-  Confidence level. Default `0.95`.
+  Confidence/prediction level. Default `0.95`.
 
 - B_sub:
 
@@ -56,7 +68,7 @@ predict(
 
 ## Value
 
-A tibble with `.fitted` and, if `interval = "confidence"`, `.lower` and
+A tibble with `.fitted` and, when `interval != "none"`, `.lower` and
 `.upper`.
 
 ## Examples

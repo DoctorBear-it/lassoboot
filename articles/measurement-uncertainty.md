@@ -14,6 +14,20 @@ library(dplyr)
 #>     intersect, setdiff, setequal, union
 ```
 
+> **Upgrading from v0.1?** Column names in
+> [`tidy()`](https://generics.r-lib.org/reference/tidy.html) output
+> changed in v0.2.0: `estimate` → `mean`, `conf.low`/`conf.high` →
+> `q025`/`q975`, `std.error` → `sd`. The `conf.level` argument is now
+> `probs = c(0.025, 0.975)`. Use
+> [`lb_filter_stable()`](https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.md)
+> instead of
+> [`lb_is_significant()`](https://doctorbear-it.github.io/lassoboot/reference/lb_is_significant.md).
+> See
+> [`vignette("migration-to-v020")`](https://doctorbear-it.github.io/lassoboot/articles/migration-to-v020.md)
+> for the full API rename table, and
+> [`vignette("methodological-foundations")`](https://doctorbear-it.github.io/lassoboot/articles/methodological-foundations.md)
+> for the v0.2.0 conceptual framing.
+
 ## Why measurement uncertainty matters in lasso
 
 Lasso regression assumes predictors are observed without error. When
@@ -201,10 +215,10 @@ The parametric bootstrap generates the response in each iteration as:
 How `sigma_hat` is estimated is controlled by
 `lb_control(sigma_method = ...)`:
 
-| Method | Description | Coverage |
+| Method | Description | Prediction-band width |
 |----|----|----|
 | `"refit"` (default) | OLS on lasso-selected variables; residual SE from unregularized fit | Closest to nominal |
-| `"naive"` | `sd(y - fitted_lasso)` | Under-covers (residuals are shrunk) |
+| `"naive"` | `sd(y - fitted_lasso)` | Under-estimates (residuals are shrunk) |
 | `"cv"` | Out-of-fold CV residuals | Honest but slow |
 
 The `"refit"` default is chosen because lasso shrinks its own residuals

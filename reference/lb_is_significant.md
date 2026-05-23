@@ -1,10 +1,12 @@
-# Test whether terms meet a significance criterion
+# Test whether terms meet a significance criterion (deprecated)
 
-A convenience predicate for use in
-[`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html).
-Three complementary criteria: bootstrap CI exclusion of zero (`"ci"`),
-selection probability threshold (`"selection"`), stability score
-threshold (`"stability"`), or all three simultaneously (`"all"`).
+**\[deprecated\]**
+
+Deprecated in favour of
+[`lb_filter_stable()`](https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.md),
+which uses more precise language and a more flexible argument structure.
+`lb_is_significant()` still works but emits a one-time warning per
+session.
 
 ## Usage
 
@@ -39,15 +41,13 @@ A logical vector the same length as `nrow(tidy_df)`.
 ## Examples
 
 ``` r
-# Construct a minimal tidy-style tibble to demonstrate the predicate
-td <- data.frame(
-  conf.low        = c(-0.5,  0.1, -0.2),
-  conf.high       = c(-0.1,  0.8,  0.3),
-  selection_prob  = c( 0.9,  0.7,  0.2),
-  stability_score = c( 0.85, 0.65, 0.15)
-)
-lb_is_significant(td, method = "ci")
-#> [1]  TRUE  TRUE FALSE
-lb_is_significant(td, method = "selection", threshold = 0.6)
-#> [1]  TRUE  TRUE FALSE
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 20)
+td <- tidy(boot)
+suppressWarnings(lb_is_significant(td, method = "selection", threshold = 0.5))
+#> [1] TRUE TRUE TRUE
 ```

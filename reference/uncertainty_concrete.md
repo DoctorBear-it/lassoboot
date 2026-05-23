@@ -14,7 +14,8 @@ uncertainty_concrete
 
 ## Format
 
-A tibble with 5 rows and 4 variables:
+A tibble with 5 rows and 4 variables (legacy single-precision format;
+compatible with all `lassoboot` versions):
 
 - term:
 
@@ -30,7 +31,12 @@ A tibble with 5 rows and 4 variables:
 
 - value:
 
-  Numeric. Uncertainty magnitude.
+  Numeric. Single-operator (within-lab) uncertainty magnitude. In
+  v0.2.0+, use
+  [`lb_uncertainty()`](https://doctorbear-it.github.io/lassoboot/reference/lb_uncertainty.md)
+  with the `multi` argument to declare two precision levels
+  (`value_single`, `value_multi`). This dataset uses the legacy
+  single-column format which is backward-compatible.
 
 - source:
 

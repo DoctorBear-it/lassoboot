@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,8 @@
 <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -78,6 +80,19 @@
 <span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span></code></pre></div>
+<blockquote>
+<p><strong>Upgrading from v0.1?</strong> Column names in
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output changed in v0.2.0: <code>estimate</code> →
+<code>mean</code>, <code>conf.low</code>/<code>conf.high</code> →
+<code>q025</code>/<code>q975</code>, <code>std.error</code> →
+<code>sd</code>. The <code>conf.level</code> argument is now
+<code>probs = c(0.025, 0.975)</code>. Use
+<code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> instead of
+<code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code>. See
+<code><a href="../articles/migration-to-v020.html">vignette("migration-to-v020")</a></code> for the full API rename
+table, and <code><a href="../articles/methodological-foundations.html">vignette("methodological-foundations")</a></code> for the
+v0.2.0 conceptual framing.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="why-measurement-uncertainty-matters-in-lasso">Why measurement uncertainty matters in lasso<a class="anchor" aria-label="anchor" href="#why-measurement-uncertainty-matters-in-lasso"></a>
 </h2>
@@ -335,7 +350,7 @@ as:</p>
 <thead><tr class="header">
 <th>Method</th>
 <th>Description</th>
-<th>Coverage</th>
+<th>Prediction-band width</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -348,7 +363,7 @@ fit</td>
 <tr class="even">
 <td><code>"naive"</code></td>
 <td><code>sd(y - fitted_lasso)</code></td>
-<td>Under-covers (residuals are shrunk)</td>
+<td>Under-estimates (residuals are shrunk)</td>
 </tr>
 <tr class="odd">
 <td><code>"cv"</code></td>

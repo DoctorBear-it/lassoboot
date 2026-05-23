@@ -7,6 +7,8 @@
 <url><loc>https://doctorbear-it.github.io/lassoboot/articles/index.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/articles/interpreting-results.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/articles/measurement-uncertainty.html</loc></url>
+<url><loc>https://doctorbear-it.github.io/lassoboot/articles/methodological-foundations.html</loc></url>
+<url><loc>https://doctorbear-it.github.io/lassoboot/articles/migration-to-v020.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/authors.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/index.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/news/index.html</loc></url>
@@ -22,6 +24,7 @@
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_correlated_pairs.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_derive.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_engine_glmnet.html</loc></url>
+<url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_fit.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_folds_blocked.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_folds_custom.html</loc></url>
@@ -33,6 +36,7 @@
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_normalize.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_coefficients.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_complexity.html</loc></url>
+<url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_envelopes.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_interactions.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_prediction.html</loc></url>
 <url><loc>https://doctorbear-it.github.io/lassoboot/reference/lb_plot_selection.html</loc></url>

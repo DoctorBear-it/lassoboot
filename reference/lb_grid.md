@@ -9,7 +9,16 @@ and returns `.fitted`, `.lower`, `.upper`.
 ## Usage
 
 ``` r
-lb_grid(boot, focal, n = 100, at = "observed", extrapolate = FALSE)
+lb_grid(
+  boot,
+  focal,
+  n = 100,
+  at = "observed",
+  extrapolate = FALSE,
+  clip_to_observed = NULL,
+  interval = "confidence",
+  level = 0.95
+)
 ```
 
 ## Arguments
@@ -37,9 +46,33 @@ lb_grid(boot, focal, n = 100, at = "observed", extrapolate = FALSE)
   Logical. Allow grid points outside the observed focal range? User must
   opt in. Default `FALSE`.
 
+- clip_to_observed:
+
+  Logical or `NULL`. When `NULL` (default), resolves to `TRUE` when
+  `at = "observed"` and `FALSE` otherwise. When `TRUE`, clips the focal
+  predictor range **per non-focal combination** to the range observed in
+  the original data for rows matching that combination. This prevents
+  the grid from showing predictions in regions where no measurements of
+  that type were made. Ignored (with a warning) when `at = "median"` or
+  `at` is a list.
+
+- interval:
+
+  One of `"confidence"` (default), `"prediction"`, or `"none"`. Passed
+  to
+  [`predict.lb_boot()`](https://doctorbear-it.github.io/lassoboot/reference/predict.lb_boot.md).
+  `"confidence"` returns the quantiles of the bootstrap fitted-mean
+  distribution; `"prediction"` additionally incorporates residual
+  scatter.
+
+- level:
+
+  Confidence/prediction level. Default `0.95`.
+
 ## Value
 
-A tibble with the grid columns plus `.fitted`, `.lower`, `.upper`.
+A tibble with the grid columns plus `.fitted` and, when
+`interval != "none"`, `.lower` and `.upper`.
 
 ## Details
 

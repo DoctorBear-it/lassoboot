@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,8 @@
 <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -69,6 +71,19 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DoctorBear-it/lassoboot" class="external-link">lassoboot</a></span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>Upgrading from v0.1?</strong> Column names in
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> output changed in v0.2.0: <code>estimate</code> →
+<code>mean</code>, <code>conf.low</code>/<code>conf.high</code> →
+<code>q025</code>/<code>q975</code>, <code>std.error</code> →
+<code>sd</code>. The <code>conf.level</code> argument is now
+<code>probs = c(0.025, 0.975)</code>. Use
+<code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> instead of
+<code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code>. See
+<code><a href="../articles/migration-to-v020.html">vignette("migration-to-v020")</a></code> for the full API rename
+table, and <code><a href="../articles/methodological-foundations.html">vignette("methodological-foundations")</a></code> for the
+v0.2.0 conceptual framing.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="what-this-package-does">What this package does<a class="anchor" aria-label="anchor" href="#what-this-package-does"></a>
 </h2>
@@ -154,7 +169,7 @@ bootstrap<a class="anchor" aria-label="anchor" href="#step-2-lb_bootstrap-run-th
 <span><span class="co">#&gt;   sigma_hat:   0.6104  (method: refit)</span></span>
 <span><span class="co">#&gt; &lt;lb_boot&gt;</span></span>
 <span><span class="co">#&gt;   B:           200 iterations</span></span>
-<span><span class="co">#&gt;   elapsed:     1.3s</span></span>
+<span><span class="co">#&gt;   elapsed:     1.8s</span></span>
 <span><span class="co">#&gt;   path stored: TRUE</span></span>
 <span><span class="co">#&gt;   models kept: FALSE</span></span></code></pre></div>
 <p>With <code>B = 200</code> this takes a few seconds. Production
@@ -179,13 +194,13 @@ modified.</p>
 <span><span class="va">td</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span></span>
 <span><span class="va">td</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
-<span><span class="co">#&gt;   term  estimate estimate_median std.error conf.low conf.high selection_prob</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> x1      2.02            2.02      0.079<span style="text-decoration: underline;">4</span>   1.86       2.18           1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> x2      0.782           0.775     0.070<span style="text-decoration: underline;">9</span>   0.665      0.920          1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> x3      0.162           0.164     0.083<span style="text-decoration: underline;">2</span>   0.019<span style="text-decoration: underline;">7</span>     0.316          0.995</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> x4      0.091<span style="text-decoration: underline;">7</span>          0.088<span style="text-decoration: underline;">4</span>    0.083<span style="text-decoration: underline;">3</span>  -<span style="color: #BB0000;">0.045</span><span style="color: #BB0000; text-decoration: underline;">8</span>     0.262          0.965</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   term    mean median     sd    q025  q975 selection_prob n_selected</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> x1    2.02   2.02   0.079<span style="text-decoration: underline;">4</span>  1.86   2.18           1            200</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> x2    0.782  0.775  0.070<span style="text-decoration: underline;">9</span>  0.665  0.920          1            200</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> x3    0.162  0.164  0.083<span style="text-decoration: underline;">2</span>  0.019<span style="text-decoration: underline;">7</span> 0.316          0.995        199</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> x4    0.091<span style="text-decoration: underline;">7</span> 0.088<span style="text-decoration: underline;">4</span> 0.083<span style="text-decoration: underline;">3</span> -<span style="color: #BB0000;">0.045</span><span style="color: #BB0000; text-decoration: underline;">8</span> 0.262          0.965        193</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Each row is one predictor. The key columns:</p>
 <table class="table">
 <colgroup>
@@ -198,15 +213,16 @@ modified.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>estimate</code></td>
+<td><code>mean</code></td>
 <td>Bootstrap mean coefficient (zeros included for unselected
 iterations)</td>
 </tr>
 <tr class="even">
 <td>
-<code>conf.low</code> / <code>conf.high</code>
+<code>q025</code> / <code>q975</code>
 </td>
-<td>Bootstrap quantile interval (default 95 %)</td>
+<td>Bootstrap quantile interval (default 2.5 % and 97.5 %
+quantiles)</td>
 </tr>
 <tr class="odd">
 <td><code>selection_prob</code></td>
@@ -239,23 +255,16 @@ threshold. Terms above it are selected in more than half of bootstrap
 iterations.</p>
 </div>
 <div class="section level3">
-<h3 id="filtering-significant-terms">Filtering significant terms<a class="anchor" aria-label="anchor" href="#filtering-significant-terms"></a>
+<h3 id="filtering-stable-terms">Filtering stable terms<a class="anchor" aria-label="anchor" href="#filtering-stable-terms"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="../reference/lb_is_significant.html">lb_is_significant</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/pick.html" class="external-link">pick</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"selection"</span>, threshold <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
-<span><span class="co">#&gt;   term  estimate estimate_median std.error conf.low conf.high selection_prob</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> x1      2.02            2.02      0.079<span style="text-decoration: underline;">4</span>   1.86       2.18           1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> x2      0.782           0.775     0.070<span style="text-decoration: underline;">9</span>   0.665      0.920          1    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> x3      0.162           0.164     0.083<span style="text-decoration: underline;">2</span>   0.019<span style="text-decoration: underline;">7</span>     0.316          0.995</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> x4      0.091<span style="text-decoration: underline;">7</span>          0.088<span style="text-decoration: underline;">4</span>    0.083<span style="text-decoration: underline;">3</span>  -<span style="color: #BB0000;">0.045</span><span style="color: #BB0000; text-decoration: underline;">8</span>     0.262          0.965</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># ℹ 2 more variables: n_selected &lt;int&gt;, stability_score &lt;dbl&gt;</span></span></span></code></pre></div>
-<p><code><a href="../reference/lb_is_significant.html">lb_is_significant()</a></code> is a convenience predicate for use
-inside <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">dplyr::filter()</a></code>. The three available methods —
-<code>"ci"</code> (CI excludes zero), <code>"selection"</code>, and
-<code>"stability"</code> — are discussed in
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lb_filter_stable.html">lb_filter_stable</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span>, min_selection_prob <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE TRUE TRUE TRUE</span></span></code></pre></div>
+<p><code><a href="../reference/lb_filter_stable.html">lb_filter_stable()</a></code> filters a <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> data
+frame to rows meeting one or more stability criteria. Pass
+<code>min_selection_prob</code>, <code>min_stability_score</code>, or
+<code>quantiles_exclude_zero = TRUE</code> in any combination. The full
+set of criteria is discussed in
 <code><a href="../articles/interpreting-results.html">vignette("interpreting-results")</a></code>.</p>
 </div>
 </div>
@@ -303,8 +312,8 @@ covered in <code><a href="../articles/measurement-uncertainty.html">vignette("me
 <ul>
 <li>
 <code><a href="../articles/measurement-uncertainty.html">vignette("measurement-uncertainty")</a></code> — the three
-uncertainty types, derived quantities, normalization, and how sigma
-method affects CI coverage.</li>
+uncertainty types, derived quantities, normalization, and how
+<code>sigma_method</code> affects prediction-band width.</li>
 <li>
 <code><a href="../articles/interpreting-results.html">vignette("interpreting-results")</a></code> — selection
 probability vs. CI vs. stability score, correlated predictors,

@@ -18,7 +18,8 @@ lb_control(
   progress = interactive(),
   seed = NULL,
   intercept = TRUE,
-  standardize = TRUE
+  standardize = TRUE,
+  precision = "single"
 )
 ```
 
@@ -60,10 +61,11 @@ lb_control(
 
 - sigma_method:
 
-  Residual SE estimation method: `"refit"` (default — OLS on selected
-  variables, closes the under-coverage gap from regularisation-shrunk
-  residuals), `"naive"` (matches prototype, biased low under
-  regularisation), or `"cv"` (out-of-fold, slow but most honest).
+  Residual SE estimation method: `"refit"` (default — OLS on
+  lasso-selected variables; appropriate for prediction-band work and
+  more conservative than `"naive"`), `"naive"` (`sd(y - fitted_lasso)`;
+  correct for characterizing scatter around the predictive model), or
+  `"cv"` (out-of-fold CV residuals; slow but most honest).
 
 - parallel:
 
@@ -96,6 +98,17 @@ lb_control(
 
   Logical. Standardize predictors? Passed to the engine. Default `TRUE`.
 
+- precision:
+
+  Which precision level to use when
+  [`lb_uncertainty()`](https://doctorbear-it.github.io/lassoboot/reference/lb_uncertainty.md)
+  declares two levels. `"single"` (default) uses within-laboratory
+  (single-operator) precision; `"multi"` uses multi-laboratory
+  reproducibility. When
+  [`lb_uncertainty()`](https://doctorbear-it.github.io/lassoboot/reference/lb_uncertainty.md)
+  was called with only one value per predictor, this argument has no
+  effect.
+
 ## Value
 
 An `lb_control` object (a validated, classed list). The print method
@@ -115,4 +128,9 @@ lb_control(cv_folds = 3L, sigma_method = "naive", seed = 42L)
 #>   cv_folds = 3L
 #>   sigma_method = "naive"
 #>   seed = 42L 
+
+# Multi-laboratory precision (requires multi values in lb_uncertainty())
+lb_control(precision = "multi")
+#> <lb_control>
+#>   precision = "multi" 
 ```

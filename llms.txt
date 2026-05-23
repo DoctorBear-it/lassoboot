@@ -95,6 +95,8 @@ Declare what to fit and how.
   bootstrap loop
 - [`lb_engine_glmnet()`](https://doctorbear-it.github.io/lassoboot/reference/lb_engine_glmnet.md)
   : Create a glmnet engine for lassoboot
+- [`lb_normalize()`](https://doctorbear-it.github.io/lassoboot/reference/lb_normalize.md)
+  : Normalize a response by a reference strength
 
 ## Fold generators
 
@@ -149,7 +151,7 @@ ggplot2-based visualisations of bootstrap results.
 - [`autoplot(`*`<lb_boot>`*`)`](https://doctorbear-it.github.io/lassoboot/reference/autoplot.lb_boot.md)
   : Plot bootstrap lasso output
 - [`lb_plot_coefficients()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_coefficients.md)
-  : Plot bootstrap coefficient estimates with confidence intervals
+  : Plot bootstrap coefficient distribution with quantile intervals
 - [`lb_plot_selection()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_selection.md)
   : Plot selection probabilities
 - [`lb_plot_stability()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_stability.md)
@@ -161,6 +163,8 @@ ggplot2-based visualisations of bootstrap results.
   iterations
 - [`lb_plot_prediction()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_prediction.md)
   : Plot a prediction ribbon for a focal predictor
+- [`lb_plot_envelopes()`](https://doctorbear-it.github.io/lassoboot/reference/lb_plot_envelopes.md)
+  : Flagship measurement-uncertainty-propagated prediction envelope plot
 
 ## Stability and significance helpers
 
@@ -171,8 +175,11 @@ Post-hoc diagnostics on bootstrap output.
 - [`lb_correlated_pairs()`](https://doctorbear-it.github.io/lassoboot/reference/lb_correlated_pairs.md)
   : Identify correlated predictor pairs with split selection
   probabilities
+- [`lb_filter_stable()`](https://doctorbear-it.github.io/lassoboot/reference/lb_filter_stable.md)
+  : Filter tidy bootstrap output on stability criteria
 - [`lb_is_significant()`](https://doctorbear-it.github.io/lassoboot/reference/lb_is_significant.md)
-  : Test whether terms meet a significance criterion
+  **\[deprecated\]** : Test whether terms meet a significance criterion
+  (deprecated)
 
 ## Data
 
@@ -200,3 +207,7 @@ Bundled example datasets.
   Results](https://doctorbear-it.github.io/lassoboot/articles/interpreting-results.md):
 - [Measurement Uncertainty in Parametric Bootstrap
   Lasso](https://doctorbear-it.github.io/lassoboot/articles/measurement-uncertainty.md):
+- [Methodological
+  Foundations](https://doctorbear-it.github.io/lassoboot/articles/methodological-foundations.md):
+- [Migrating from lassoboot v0.1 to
+  v0.2.0](https://doctorbear-it.github.io/lassoboot/articles/migration-to-v020.md):

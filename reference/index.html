@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lassoboot</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,8 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with lassoboot</a></li>
     <li><a class="dropdown-item" href="../articles/interpreting-results.html">Interpreting Bootstrap Lasso Results</a></li>
     <li><a class="dropdown-item" href="../articles/measurement-uncertainty.html">Measurement Uncertainty in Parametric Bootstrap Lasso</a></li>
+    <li><a class="dropdown-item" href="../articles/methodological-foundations.html">Methodological Foundations</a></li>
+    <li><a class="dropdown-item" href="../articles/migration-to-v020.html">Migrating from lassoboot v0.1 to v0.2.0</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -88,6 +90,13 @@
 
         </dt>
         <dd>Create a glmnet engine for lassoboot</dd>
+
+        <dt>
+
+          <code><a href="lb_normalize.html">lb_normalize()</a></code>
+
+        </dt>
+        <dd>Normalize a response by a reference strength</dd>
       </dl></div><div class="section level2">
       <h2 id="fold-generators">Fold generators<a class="anchor" aria-label="anchor" href="#fold-generators"></a></h2>
 
@@ -230,7 +239,7 @@
           <code><a href="lb_plot_coefficients.html">lb_plot_coefficients()</a></code>
 
         </dt>
-        <dd>Plot bootstrap coefficient estimates with confidence intervals</dd>
+        <dd>Plot bootstrap coefficient distribution with quantile intervals</dd>
 
         <dt>
 
@@ -266,6 +275,13 @@
 
         </dt>
         <dd>Plot a prediction ribbon for a focal predictor</dd>
+
+        <dt>
+
+          <code><a href="lb_plot_envelopes.html">lb_plot_envelopes()</a></code>
+
+        </dt>
+        <dd>Flagship measurement-uncertainty-propagated prediction envelope plot</dd>
       </dl></div><div class="section level2">
       <h2 id="stability-and-significance-helpers">Stability and significance helpers<a class="anchor" aria-label="anchor" href="#stability-and-significance-helpers"></a></h2>
 
@@ -292,10 +308,17 @@
 
         <dt>
 
-          <code><a href="lb_is_significant.html">lb_is_significant()</a></code>
+          <code><a href="lb_filter_stable.html">lb_filter_stable()</a></code>
 
         </dt>
-        <dd>Test whether terms meet a significance criterion</dd>
+        <dd>Filter tidy bootstrap output on stability criteria</dd>
+
+        <dt>
+
+          <code><a href="lb_is_significant.html">lb_is_significant()</a></code>
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
+        </dt>
+        <dd>Test whether terms meet a significance criterion (deprecated)</dd>
       </dl></div><div class="section level2">
       <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 

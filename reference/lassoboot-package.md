@@ -81,8 +81,10 @@ Useful links:
 
 ## Author
 
-**Maintainer**: DoctorBear-it <barrett310@gmail.com>
+**Maintainer**: Timothy Barrett <dr.timothy.j.barrett@gmail.com>
+([ORCID](https://orcid.org/0000-0002-7703-1011))
 
 Authors:
 
-- DoctorBear-it <barrett310@gmail.com>
+- Timothy Barrett <dr.timothy.j.barrett@gmail.com>
+  ([ORCID](https://orcid.org/0000-0002-7703-1011))
