@@ -36,5 +36,5 @@ df$y <- 2 * df$x1 + rnorm(n)
 spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
 boot <- lb_bootstrap(spec, B = 20)
 td <- tidy(boot)
-lb_is_significant(td, method = "selection", threshold = 0.5)
+suppressWarnings(lb_is_significant(td, method = "selection", threshold = 0.5))
 }

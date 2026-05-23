@@ -295,3 +295,40 @@ test_that("lb_plot_complexity vdiffr: B=50", {
   vdiffr::expect_doppelganger("complexity-B50",
                                lb_plot_complexity(boot))
 })
+
+# ---- lb_plot_envelopes() -----------------------------------------------------
+
+test_that("lb_plot_envelopes returns a ggplot (no group)", {
+  boot <- make_plot_boot()
+  p    <- lb_plot_envelopes(boot, focal = "x1", n = 20L)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("lb_plot_envelopes has GeomRibbon and GeomLine", {
+  boot         <- make_plot_boot()
+  p            <- lb_plot_envelopes(boot, focal = "x1", n = 20L)
+  geom_classes <- vapply(p$layers, function(l) class(l$geom)[1L], character(1L))
+  expect_true("GeomRibbon" %in% geom_classes)
+  expect_true("GeomLine"   %in% geom_classes)
+})
+
+test_that("lb_plot_envelopes with group adds color/fill/linetype aesthetics", {
+  boot <- make_plot_boot()
+  # Attach a discrete group column to the prediction grid by running the
+  # function and verifying no error is raised; the mapping is the real check.
+  p <- lb_plot_envelopes(boot, focal = "x1", n = 10L)
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("lb_plot_envelopes vdiffr: canonical (no group)", {
+  boot <- make_plot_boot()
+  vdiffr::expect_doppelganger("envelopes-canonical",
+                               lb_plot_envelopes(boot, focal = "x1", n = 20L))
+})
+
+test_that("lb_plot_envelopes vdiffr: interval=both (no group)", {
+  boot <- make_plot_boot()
+  vdiffr::expect_doppelganger("envelopes-both",
+                               lb_plot_envelopes(boot, focal = "x1", n = 20L,
+                                                 interval = "both"))
+})

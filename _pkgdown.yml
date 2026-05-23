@@ -13,6 +13,7 @@ reference:
       - lb_constraints
       - lb_derive
       - lb_engine_glmnet
+      - lb_normalize
 
   - title: "Fold generators"
     desc: "Cross-validation fold assignment strategies."
@@ -52,12 +53,14 @@ reference:
       - lb_plot_interactions
       - lb_plot_complexity
       - lb_plot_prediction
+      - lb_plot_envelopes
 
   - title: "Stability and significance helpers"
     desc: "Post-hoc diagnostics on bootstrap output."
     contents:
       - lb_stability
       - lb_correlated_pairs
+      - lb_filter_stable
       - lb_is_significant
 
   - title: "Data"

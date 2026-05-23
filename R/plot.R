@@ -507,10 +507,10 @@ lb_plot_envelopes <- function(boot,
       do.call(ggplot2::aes, extra)
     } else {
       do.call(ggplot2::aes, c(
-        list(color    = .data[[group]],
-             fill     = .data[[group]],
-             linetype = .data[[group]],
-             group    = .data$.grp_int),
+        list(color    = rlang::sym(group),
+             fill     = rlang::sym(group),
+             linetype = rlang::sym(group),
+             group    = rlang::sym(".grp_int")),
         extra
       ))
     }
@@ -521,31 +521,31 @@ lb_plot_envelopes <- function(boot,
     # Outer prediction ribbon (low alpha)
     p <- p + ggplot2::geom_ribbon(
       data    = grid_pred,
-      mapping = make_group_aes(list(ymin = .data$.lower,
-                                    ymax = .data$.upper)),
+      mapping = make_group_aes(list(ymin = rlang::sym(".lower"),
+                                    ymax = rlang::sym(".upper"))),
       alpha   = alpha_ribbon * 0.5,
       color   = NA
     )
     # Inner confidence ribbon (higher alpha)
     p <- p + ggplot2::geom_ribbon(
-      mapping = make_group_aes(list(ymin = .data$.lower,
-                                    ymax = .data$.upper)),
+      mapping = make_group_aes(list(ymin = rlang::sym(".lower"),
+                                    ymax = rlang::sym(".upper"))),
       alpha   = alpha_ribbon,
       color   = NA
     )
   } else if (interval == "prediction") {
     p <- p + ggplot2::geom_ribbon(
       data    = grid_pred,
-      mapping = make_group_aes(list(ymin = .data$.lower,
-                                    ymax = .data$.upper)),
+      mapping = make_group_aes(list(ymin = rlang::sym(".lower"),
+                                    ymax = rlang::sym(".upper"))),
       alpha   = alpha_ribbon,
       color   = NA
     )
   } else {
     # "confidence"
     p <- p + ggplot2::geom_ribbon(
-      mapping = make_group_aes(list(ymin = .data$.lower,
-                                    ymax = .data$.upper)),
+      mapping = make_group_aes(list(ymin = rlang::sym(".lower"),
+                                    ymax = rlang::sym(".upper"))),
       alpha   = alpha_ribbon,
       color   = NA
     )
@@ -553,7 +553,7 @@ lb_plot_envelopes <- function(boot,
 
   # Mean prediction line (from confidence grid — same mean either way)
   p <- p + ggplot2::geom_line(
-    mapping = make_group_aes(list(y = .data$.fitted)),
+    mapping = make_group_aes(list(y = rlang::sym(".fitted"))),
     linewidth = 0.7
   )
 
