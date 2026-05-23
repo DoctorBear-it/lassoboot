@@ -14,9 +14,10 @@
 #' @param keep_models Logical. Store the engine fit object for every iteration?
 #'   Off by default; only needed for per-model diagnostics. Default `FALSE`.
 #' @param sigma_method Residual SE estimation method: `"refit"` (default —
-#'   OLS on selected variables, closes the under-coverage gap from
-#'   regularisation-shrunk residuals), `"naive"` (matches prototype, biased
-#'   low under regularisation), or `"cv"` (out-of-fold, slow but most honest).
+#'   OLS on lasso-selected variables; appropriate for prediction-band work and
+#'   more conservative than `"naive"`), `"naive"` (`sd(y - fitted_lasso)`;
+#'   correct for characterizing scatter around the predictive model), or `"cv"`
+#'   (out-of-fold CV residuals; slow but most honest).
 #' @param parallel Logical. Use `future`/`furrr` for parallelism? Errors
 #'   helpfully if those packages are absent. Default `FALSE`.
 #' @param progress Logical. Show a `cli`-style progress bar? Default
@@ -31,6 +32,11 @@
 #' @param intercept Logical. Fit intercept? Passed to the engine. Default `TRUE`.
 #' @param standardize Logical. Standardize predictors? Passed to the engine.
 #'   Default `TRUE`.
+#' @param precision Which precision level to use when `lb_uncertainty()` declares
+#'   two levels. `"single"` (default) uses within-laboratory (single-operator)
+#'   precision; `"multi"` uses multi-laboratory reproducibility. When
+#'   `lb_uncertainty()` was called with only one value per predictor, this
+#'   argument has no effect.
 #'
 #' @return An `lb_control` object (a validated, classed list). The print method
 #'   shows only non-default values; prints `<lb_control: all defaults>` when
@@ -41,6 +47,9 @@
 #'
 #' # Non-default: 3 folds, naive sigma, fixed seed
 #' lb_control(cv_folds = 3L, sigma_method = "naive", seed = 42L)
+#'
+#' # Multi-laboratory precision (requires multi values in lb_uncertainty())
+#' lb_control(precision = "multi")
 #' @export
 lb_control <- function(lambda = "repeated_cv",
                        cv_folds = 10L,
@@ -54,7 +63,8 @@ lb_control <- function(lambda = "repeated_cv",
                        progress = interactive(),
                        seed = NULL,
                        intercept = TRUE,
-                       standardize = TRUE) {
+                       standardize = TRUE,
+                       precision = "single") {
   # --- validate lambda ---
   valid_lambda_chr <- c("repeated_cv", "min", "1se")
   if (is.character(lambda)) {
@@ -113,6 +123,16 @@ lb_control <- function(lambda = "repeated_cv",
     )
   }
 
+  # --- validate precision ---
+  valid_precision <- c("single", "multi")
+  if (!is.character(precision) || length(precision) != 1L ||
+        !precision %in% valid_precision) {
+    cli::cli_abort(
+      c("{.arg precision} must be one of {.val {valid_precision}}.",
+        "x" = "Got {.val {precision}}.")
+    )
+  }
+
   # --- validate seed ---
   if (!is.null(seed)) {
     if (!is.numeric(seed) || length(seed) != 1L || !is.finite(seed) ||
@@ -126,19 +146,20 @@ lb_control <- function(lambda = "repeated_cv",
 
   structure(
     list(
-      lambda      = lambda,
-      cv_folds    = as.integer(cv_folds),
-      cv_reps     = as.integer(cv_reps),
-      fix_lambda  = fix_lambda,
-      store_path  = store_path,
-      n_lambda    = as.integer(n_lambda),
-      keep_models = keep_models,
+      lambda       = lambda,
+      cv_folds     = as.integer(cv_folds),
+      cv_reps      = as.integer(cv_reps),
+      fix_lambda   = fix_lambda,
+      store_path   = store_path,
+      n_lambda     = as.integer(n_lambda),
+      keep_models  = keep_models,
       sigma_method = sigma_method,
-      parallel    = parallel,
-      progress    = progress,
-      seed        = seed,
-      intercept   = intercept,
-      standardize = standardize
+      parallel     = parallel,
+      progress     = progress,
+      seed         = seed,
+      intercept    = intercept,
+      standardize  = standardize,
+      precision    = precision
     ),
     class = "lb_control"
   )
@@ -158,7 +179,8 @@ lb_control <- function(lambda = "repeated_cv",
   # progress omitted: it depends on interactive() at call time, not a fixed default
   seed         = NULL,
   intercept    = TRUE,
-  standardize  = TRUE
+  standardize  = TRUE,
+  precision    = "single"
 )
 
 #' @export

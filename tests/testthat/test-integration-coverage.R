@@ -53,7 +53,13 @@ test_that("refit sigma gives higher CI coverage than naive on active predictors"
                                        sigma_method = method))
         )
         boot <- lb_bootstrap(spec, B = B_per_ds)
-        td   <- tidy(boot, conf.level = conf_level)
+        # probs replaces conf.level in v0.2.0; derive probs from conf_level
+        alpha <- 1 - conf_level
+        td   <- tidy(boot, probs = c(alpha / 2, 1 - alpha / 2))
+        q_lo <- paste0("q", formatC(round(alpha / 2 * 1000), width = 3L,
+                                    flag = "0", format = "d"))
+        q_hi <- paste0("q", formatC(round((1 - alpha / 2) * 1000),
+                                    width = 3L, flag = "0", format = "d"))
 
         for (j in seq_len(n_active)) {
           tm  <- paste0("x", j)
@@ -62,10 +68,10 @@ test_that("refit sigma gives higher CI coverage than naive on active predictors"
           if (method == "refit") {
             n_fit[j]          <- n_fit[j] + 1L
             covered_refit[j]  <- covered_refit[j] +
-              (row$conf.low <= true_coefs[j] && true_coefs[j] <= row$conf.high)
+              (row[[q_lo]] <= true_coefs[j] && true_coefs[j] <= row[[q_hi]])
           } else {
             covered_naive[j]  <- covered_naive[j] +
-              (row$conf.low <= true_coefs[j] && true_coefs[j] <= row$conf.high)
+              (row[[q_lo]] <= true_coefs[j] && true_coefs[j] <= row[[q_hi]])
           }
         }
       }

@@ -20,6 +20,13 @@ knitr::opts_chunk$set(
 library(lassoboot)
 ```
 
+> **Upgrading from v0.1?** Column names in `tidy()` output changed in v0.2.0:
+> `estimate` → `mean`, `conf.low`/`conf.high` → `q025`/`q975`,
+> `std.error` → `sd`. The `conf.level` argument is now `probs = c(0.025, 0.975)`.
+> Use `lb_filter_stable()` instead of `lb_is_significant()`.
+> See `vignette("migration-to-v020")` for the full API rename table, and
+> `vignette("methodological-foundations")` for the v0.2.0 conceptual framing.
+
 ## What this package does
 
 `lassoboot` answers the question: *which of my predictors actually matter, given
@@ -101,8 +108,8 @@ Each row is one predictor. The key columns:
 
 | Column | Meaning |
 |---|---|
-| `estimate` | Bootstrap mean coefficient (zeros included for unselected iterations) |
-| `conf.low` / `conf.high` | Bootstrap quantile interval (default 95 %) |
+| `mean` | Bootstrap mean coefficient (zeros included for unselected iterations) |
+| `q025` / `q975` | Bootstrap quantile interval (default 2.5 % and 97.5 % quantiles) |
 | `selection_prob` | Fraction of *B* iterations in which this term was selected |
 | `stability_score` | Max selection probability across the lambda path |
 
@@ -125,16 +132,16 @@ autoplot(boot, type = "selection")
 The dashed line at 0.5 is the conventional "majority selection" threshold.
 Terms above it are selected in more than half of bootstrap iterations.
 
-### Filtering significant terms
+### Filtering stable terms
 
 ```{r filter}
-tidy(boot) |>
-  filter(lb_is_significant(pick(everything()), method = "selection", threshold = 0.5))
+lb_filter_stable(tidy(boot), min_selection_prob = 0.5)
 ```
 
-`lb_is_significant()` is a convenience predicate for use inside `dplyr::filter()`.
-The three available methods — `"ci"` (CI excludes zero), `"selection"`, and
-`"stability"` — are discussed in `vignette("interpreting-results")`.
+`lb_filter_stable()` filters a `tidy()` data frame to rows meeting one or more
+stability criteria. Pass `min_selection_prob`, `min_stability_score`, or
+`quantiles_exclude_zero = TRUE` in any combination. The full set of criteria
+is discussed in `vignette("interpreting-results")`.
 
 ## The `concrete` dataset
 
@@ -161,7 +168,7 @@ uncertainty propagation and the choice of sigma method is covered in
 ## Next steps
 
 - `vignette("measurement-uncertainty")` — the three uncertainty types, derived
-  quantities, normalization, and how sigma method affects CI coverage.
+  quantities, normalization, and how `sigma_method` affects prediction-band width.
 - `vignette("interpreting-results")` — selection probability vs. CI vs.
   stability score, correlated predictors, prediction grids, and nested
   cross-validation.

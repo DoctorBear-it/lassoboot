@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{lb_plot_coefficients}
 \alias{lb_plot_coefficients}
-\title{Plot bootstrap coefficient estimates with confidence intervals}
+\title{Plot bootstrap coefficient distribution with quantile intervals}
 \usage{
 lb_plot_coefficients(
   x,
   scale = c("raw", "gelman"),
-  filter = c("all", "significant", "selected"),
+  filter = c("all", "quantiles_exclude_zero", "selected", "significant"),
   ...
 )
 }
@@ -16,8 +16,10 @@ lb_plot_coefficients(
 
 \item{scale}{\code{"raw"} (default) or \code{"gelman"} (2-SD scaling per Gelman 2008).}
 
-\item{filter}{\code{"all"} (default), \code{"significant"} (CI excludes zero), or
-\code{"selected"} (selection_prob > 0.5).}
+\item{filter}{\code{"all"} (default), \code{"quantiles_exclude_zero"} (95\% quantile
+interval excludes zero), or \code{"selected"} (selection_prob > 0.5). The
+deprecated value \code{"significant"} is an alias for \code{"quantiles_exclude_zero"}
+and emits a one-time warning.}
 
 \item{...}{Unused.}
 }
@@ -25,7 +27,7 @@ lb_plot_coefficients(
 A \code{ggplot} object.
 }
 \description{
-Produces a horizontal forest plot of bootstrap coefficient estimates and
+Produces a horizontal forest plot of bootstrap coefficient means and
 quantile intervals, ordered by point estimate. Color encodes selection
 probability.
 }

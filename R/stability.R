@@ -216,12 +216,72 @@ lb_correlated_pairs <- function(boot, cor_threshold = 0.7, prob_threshold = 0.5)
   dplyr::bind_rows(rows)
 }
 
-#' Test whether terms meet a significance criterion
+#' Filter tidy bootstrap output on stability criteria
 #'
-#' A convenience predicate for use in [dplyr::filter()]. Three complementary
-#' criteria: bootstrap CI exclusion of zero (`"ci"`), selection probability
-#' threshold (`"selection"`), stability score threshold (`"stability"`), or all
-#' three simultaneously (`"all"`).
+#' A convenience predicate for use inside [dplyr::filter()]. Applies one or
+#' more stability criteria to a tibble from [tidy.lb_boot()]. Unlike the
+#' deprecated [lb_is_significant()], each criterion is an independent named
+#' argument that can be combined in any combination.
+#'
+#' @param tidy_df A tibble from [tidy.lb_boot()].
+#' @param min_selection_prob Minimum selection probability threshold. Rows with
+#'   `selection_prob < min_selection_prob` are excluded. Default `NULL` (no
+#'   filter on this criterion).
+#' @param min_stability_score Minimum stability score threshold. Rows with
+#'   `stability_score < min_stability_score` are excluded. Default `NULL` (no
+#'   filter on this criterion).
+#' @param quantiles_exclude_zero Logical. If `TRUE`, exclude rows where the
+#'   default 95 % quantile interval (`q025` to `q975`) does not exclude zero
+#'   (i.e. rows where `q025 <= 0` AND `q975 >= 0`). Default `FALSE`.
+#'
+#' @return A logical vector the same length as `nrow(tidy_df)`.
+#' @examples
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 20)
+#' td <- tidy(boot)
+#' # Keep only terms selected in the majority of replicates
+#' td[lb_filter_stable(td, min_selection_prob = 0.5), ]
+#' # Combine criteria
+#' td[lb_filter_stable(td, min_selection_prob = 0.5, min_stability_score = 0.4), ]
+#' @export
+lb_filter_stable <- function(tidy_df,
+                              min_selection_prob   = NULL,
+                              min_stability_score  = NULL,
+                              quantiles_exclude_zero = FALSE) {
+  keep <- rep(TRUE, nrow(tidy_df))
+
+  if (!is.null(min_selection_prob)) {
+    keep <- keep & (tidy_df$selection_prob >= min_selection_prob)
+  }
+  if (!is.null(min_stability_score)) {
+    keep <- keep & (tidy_df$stability_score >= min_stability_score)
+  }
+  if (isTRUE(quantiles_exclude_zero)) {
+    # Look for q025/q975 columns; fall back to first q* columns found
+    lo_col <- if ("q025" %in% names(tidy_df)) "q025" else
+      names(tidy_df)[grepl("^q0", names(tidy_df))][1L]
+    hi_col <- if ("q975" %in% names(tidy_df)) "q975" else
+      names(tidy_df)[grepl("^q9", names(tidy_df))][1L]
+    if (!is.na(lo_col) && !is.na(hi_col)) {
+      keep <- keep & (tidy_df[[lo_col]] > 0 | tidy_df[[hi_col]] < 0)
+    }
+  }
+
+  keep
+}
+
+#' Test whether terms meet a significance criterion (deprecated)
+#'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' Deprecated in favour of [lb_filter_stable()], which uses more precise
+#' language and a more flexible argument structure. `lb_is_significant()` still
+#' works but emits a one-time warning per session.
 #'
 #' @param tidy_df A tibble from [tidy.lb_boot()].
 #' @param method One of `"ci"`, `"selection"`, `"stability"`, or `"all"`.
@@ -230,28 +290,48 @@ lb_correlated_pairs <- function(boot, cor_threshold = 0.7, prob_threshold = 0.5)
 #'
 #' @return A logical vector the same length as `nrow(tidy_df)`.
 #' @examples
-#' # Construct a minimal tidy-style tibble to demonstrate the predicate
-#' td <- data.frame(
-#'   conf.low        = c(-0.5,  0.1, -0.2),
-#'   conf.high       = c(-0.1,  0.8,  0.3),
-#'   selection_prob  = c( 0.9,  0.7,  0.2),
-#'   stability_score = c( 0.85, 0.65, 0.15)
-#' )
-#' lb_is_significant(td, method = "ci")
-#' lb_is_significant(td, method = "selection", threshold = 0.6)
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 20)
+#' td <- tidy(boot)
+#' lb_is_significant(td, method = "selection", threshold = 0.5)
 #' @export
 lb_is_significant <- function(tidy_df,
                                method = c("ci", "selection", "stability", "all"),
                                threshold = 0.5) {
+  .warn_once(
+    "lb_is_significant_deprecated",
+    c("{.fn lb_is_significant} is deprecated.",
+      "i" = "Use {.fn lb_filter_stable} with named arguments instead:",
+      "i" = "{.code lb_filter_stable(td, min_selection_prob = 0.5)}",
+      "i" = "{.code lb_filter_stable(td, min_stability_score = 0.8)}",
+      "i" = "{.code lb_filter_stable(td, quantiles_exclude_zero = TRUE)}")
+  )
   method <- match.arg(method)
 
-  ci_sig <- function() tidy_df$conf.low > 0 | tidy_df$conf.high < 0
+  # Map old-style column names: support both v0.1 (conf.low/conf.high) and
+  # v0.2.0 (q025/q975) column names.
+  q_excludes_zero <- function() {
+    if ("q025" %in% names(tidy_df) && "q975" %in% names(tidy_df)) {
+      tidy_df$q025 > 0 | tidy_df$q975 < 0
+    } else if ("conf.low" %in% names(tidy_df) && "conf.high" %in% names(tidy_df)) {
+      tidy_df$conf.low > 0 | tidy_df$conf.high < 0
+    } else {
+      cli::cli_abort(
+        "Cannot apply {.code method = \"ci\"}: no quantile columns found in
+         {.arg tidy_df}. Run {.fn tidy} with default {.arg probs}."
+      )
+    }
+  }
 
   switch(method,
-    ci        = ci_sig(),
+    ci        = q_excludes_zero(),
     selection = tidy_df$selection_prob >= threshold,
     stability = tidy_df$stability_score >= threshold,
-    all       = ci_sig() &
+    all       = q_excludes_zero() &
                   tidy_df$selection_prob >= threshold &
                   tidy_df$stability_score >= threshold
   )

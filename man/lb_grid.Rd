@@ -4,7 +4,16 @@
 \alias{lb_grid}
 \title{Build a prediction grid varying a focal predictor}
 \usage{
-lb_grid(boot, focal, n = 100, at = "observed", extrapolate = FALSE)
+lb_grid(
+  boot,
+  focal,
+  n = 100,
+  at = "observed",
+  extrapolate = FALSE,
+  clip_to_observed = NULL,
+  interval = "confidence",
+  level = 0.95
+)
 }
 \arguments{
 \item{boot}{An \code{lb_boot} object.}
@@ -19,9 +28,24 @@ unique observed combinations), \code{"median"}, or a named list of values.}
 
 \item{extrapolate}{Logical. Allow grid points outside the observed focal
 range? User must opt in. Default \code{FALSE}.}
+
+\item{clip_to_observed}{Logical or \code{NULL}. When \code{NULL} (default), resolves to
+\code{TRUE} when \code{at = "observed"} and \code{FALSE} otherwise. When \code{TRUE}, clips the
+focal predictor range \strong{per non-focal combination} to the range observed in
+the original data for rows matching that combination. This prevents the grid
+from showing predictions in regions where no measurements of that type were
+made. Ignored (with a warning) when \code{at = "median"} or \code{at} is a list.}
+
+\item{interval}{One of \code{"confidence"} (default), \code{"prediction"}, or \code{"none"}.
+Passed to \code{\link[=predict.lb_boot]{predict.lb_boot()}}. \code{"confidence"} returns the quantiles of the
+bootstrap fitted-mean distribution; \code{"prediction"} additionally incorporates
+residual scatter.}
+
+\item{level}{Confidence/prediction level. Default \code{0.95}.}
 }
 \value{
-A tibble with the grid columns plus \code{.fitted}, \code{.lower}, \code{.upper}.
+A tibble with the grid columns plus \code{.fitted} and, when
+\code{interval != "none"}, \code{.lower} and \code{.upper}.
 }
 \description{
 Constructs a grid of \code{n} values along the focal predictor's range, crossed

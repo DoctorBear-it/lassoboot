@@ -5,14 +5,18 @@
 \alias{uncertainty_concrete}
 \title{Measurement uncertainty specification for the concrete dataset}
 \format{
-A tibble with 5 rows and 4 variables:
+A tibble with 5 rows and 4 variables (legacy single-precision format;
+compatible with all \code{lassoboot} versions):
 \describe{
 \item{term}{Character. Column name in \link{concrete} the uncertainty applies
 to.}
 \item{type}{Character. Uncertainty type: \code{"std"} (absolute standard
 deviation, in the units of \code{term}) or \code{"cov"} (coefficient of
 variation as a percentage).}
-\item{value}{Numeric. Uncertainty magnitude.}
+\item{value}{Numeric. Single-operator (within-lab) uncertainty magnitude.
+In v0.2.0+, use \code{\link[=lb_uncertainty]{lb_uncertainty()}} with the \code{multi} argument to declare
+two precision levels (\code{value_single}, \code{value_multi}). This dataset uses
+the legacy single-column format which is backward-compatible.}
 \item{source}{Character. Normative source documenting the uncertainty.}
 }
 

@@ -40,16 +40,18 @@ autoplot.lb_boot <- function(object,
   )
 }
 
-#' Plot bootstrap coefficient estimates with confidence intervals
+#' Plot bootstrap coefficient distribution with quantile intervals
 #'
-#' Produces a horizontal forest plot of bootstrap coefficient estimates and
+#' Produces a horizontal forest plot of bootstrap coefficient means and
 #' quantile intervals, ordered by point estimate. Color encodes selection
 #' probability.
 #'
 #' @param x An `lb_boot` object.
 #' @param scale `"raw"` (default) or `"gelman"` (2-SD scaling per Gelman 2008).
-#' @param filter `"all"` (default), `"significant"` (CI excludes zero), or
-#'   `"selected"` (selection_prob > 0.5).
+#' @param filter `"all"` (default), `"quantiles_exclude_zero"` (95% quantile
+#'   interval excludes zero), or `"selected"` (selection_prob > 0.5). The
+#'   deprecated value `"significant"` is an alias for `"quantiles_exclude_zero"`
+#'   and emits a one-time warning.
 #' @param ... Unused.
 #'
 #' @return A `ggplot` object.
@@ -65,17 +67,32 @@ autoplot.lb_boot <- function(object,
 #' }
 #' @export
 lb_plot_coefficients <- function(x, scale = c("raw", "gelman"),
-                                  filter = c("all", "significant", "selected"),
+                                  filter = c("all", "quantiles_exclude_zero",
+                                             "selected", "significant"),
                                   ...) {
   scale  <- match.arg(scale)
   filter <- match.arg(filter)
 
+  # Deprecated alias
+  if (filter == "significant") {
+    .warn_once(
+      "coeff_filter_significant",
+      c("{.code filter = \"significant\"} is deprecated.",
+        "i" = "Use {.code filter = \"quantiles_exclude_zero\"} instead.")
+    )
+    filter <- "quantiles_exclude_zero"
+  }
+
   td <- tidy.lb_boot(x, scale = scale)
 
+  # Need the default q025/q975 columns — tidy() always includes them
+  q_lo <- if ("q025" %in% names(td)) "q025" else names(td)[grepl("^q0", names(td))][1L]
+  q_hi <- if ("q975" %in% names(td)) "q975" else names(td)[grepl("^q9", names(td))][1L]
+
   td <- switch(filter,
-    all         = td,
-    significant = td[td$conf.low > 0 | td$conf.high < 0, ],
-    selected    = td[td$selection_prob > 0.5, ]
+    all                   = td,
+    quantiles_exclude_zero = td[td[[q_lo]] > 0 | td[[q_hi]] < 0, ],
+    selected              = td[td$selection_prob > 0.5, ]
   )
 
   if (nrow(td) == 0L) {
@@ -84,20 +101,20 @@ lb_plot_coefficients <- function(x, scale = c("raw", "gelman"),
              ggplot2::labs(title = paste0("No terms pass filter = '", filter, "'")))
   }
 
-  td$term_ord <- stats::reorder(td$term, td$estimate)
+  td$term_ord <- stats::reorder(td$term, td$mean)
 
   ggplot2::ggplot(td) +
     ggplot2::geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
     ggplot2::geom_linerange(
-      ggplot2::aes(xmin = conf.low, xmax = conf.high, y = term_ord,
+      ggplot2::aes(xmin = .data[[q_lo]], xmax = .data[[q_hi]], y = term_ord,
                    color = selection_prob)
     ) +
     ggplot2::geom_point(
-      ggplot2::aes(x = estimate, y = term_ord, color = selection_prob)
+      ggplot2::aes(x = mean, y = term_ord, color = selection_prob)
     ) +
     ggplot2::scale_color_viridis_c(limits = c(0, 1)) +
     ggplot2::theme_bw() +
-    ggplot2::labs(x = "Bootstrap coefficient estimate", y = NULL,
+    ggplot2::labs(x = "Bootstrap coefficient (mean)", y = NULL,
                   color = "Selection\nprobability")
 }
 
@@ -238,7 +255,7 @@ lb_plot_interactions <- function(x, order = 2L, ...) {
     tibble::tibble(
       var1           = c(parts[1L], parts[2L]),
       var2           = c(parts[2L], parts[1L]),
-      estimate       = iact$estimate[i],
+      estimate       = iact$mean[i],
       selection_prob = iact$selection_prob[i]
     )
   }))
@@ -355,4 +372,233 @@ lb_plot_complexity <- function(x, ...) {
     ggplot2::geom_vline(xintercept = mean_sel, linetype = "dashed") +
     ggplot2::theme_bw() +
     ggplot2::labs(x = "Number of selected predictors", y = "Count")
+}
+
+#' Flagship measurement-uncertainty-propagated prediction envelope plot
+#'
+#' Produces per-combination prediction ribbons over a focal predictor, with
+#' optional faceting, raw data overlay, and horizontal reference lines. This is
+#' the recommended visualization for communicating bootstrap results to an
+#' applied audience.
+#'
+#' The user adds domain-specific binning columns to the prediction grid (returned
+#' by [lb_grid()]) and to the raw data before calling this function; the function
+#' does not guess what binning makes sense. Aesthetic overrides and additional
+#' ggplot2 layers can be added to the returned object with `+`.
+#'
+#' @param boot An `lb_boot` object.
+#' @param focal Name of the focal (x-axis) predictor (string). Passed to
+#'   [lb_grid()].
+#' @param group String column name to map to color, fill, and linetype
+#'   aesthetics, or `NULL`. Typically a grouping variable such as a replacement
+#'   level.
+#' @param facet A `vars()` expression for faceting (e.g. `vars(Fineness,
+#'   Alumina_Grade)`), or `NULL` for no faceting.
+#' @param data A data frame to overlay as raw data points, or `NULL`. Must
+#'   contain the `focal` column and the response variable.
+#' @param hlines Numeric vector of y-values for horizontal reference lines, or
+#'   `NULL`. The first value is drawn solid; subsequent values are dashed.
+#'   Override with `hline_types`.
+#' @param hline_types Character vector of ggplot2 linetype values, one per
+#'   element of `hlines`. Default: first is `"solid"`, rest are `"dashed"`.
+#' @param xlim Length-2 numeric or `NULL`. Passed to
+#'   `ggplot2::coord_cartesian()`.
+#' @param ylim Length-2 numeric or `NULL`. Passed to
+#'   `ggplot2::coord_cartesian()`.
+#' @param n Number of grid points along the focal axis. Passed to [lb_grid()].
+#'   Default `100`.
+#' @param alpha_ribbon Alpha for ribbon fill. Default `0.25`.
+#' @param label_x X-axis label string, or `NULL` to use the focal column name.
+#' @param label_y Y-axis label string, or `NULL` to use the response variable
+#'   name from the formula.
+#' @param interval One of `"confidence"` (default), `"prediction"`, or `"both"`.
+#'   `"confidence"` shows where the model's mean function lives under
+#'   measurement-uncertainty perturbation. `"prediction"` shows where a single
+#'   new observation would land (confidence + residual scatter). `"both"` draws
+#'   an outer prediction ribbon (low alpha) and an inner confidence ribbon
+#'   (higher alpha) with the line on top.
+#' @param ... Additional arguments passed to [lb_grid()] (e.g.
+#'   `clip_to_observed`, `at`, `extrapolate`).
+#'
+#' @return A `ggplot` object. No side effects; add layers with `+`.
+#' @examples
+#' \donttest{
+#' set.seed(1)
+#' n  <- 40
+#' df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+#' df$y <- 2 * df$x1 + rnorm(n)
+#' spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+#' boot <- lb_bootstrap(spec, B = 5)
+#' lb_plot_envelopes(boot, focal = "x1")
+#' }
+#' @export
+lb_plot_envelopes <- function(boot,
+                               focal,
+                               group        = NULL,
+                               facet        = NULL,
+                               data         = NULL,
+                               hlines       = NULL,
+                               hline_types  = NULL,
+                               xlim         = NULL,
+                               ylim         = NULL,
+                               n            = 100L,
+                               alpha_ribbon = 0.25,
+                               label_x      = NULL,
+                               label_y      = NULL,
+                               interval     = c("confidence", "prediction", "both"),
+                               ...) {
+  if (!inherits(boot, "lb_boot")) {
+    cli::cli_abort("{.arg boot} must be an {.cls lb_boot} object.")
+  }
+  interval <- match.arg(interval)
+
+  # Axis labels
+  response_var <- all.vars(boot$fit$spec$formula[[2L]])
+  lx <- label_x %||% focal
+  ly <- label_y %||% response_var
+
+  # Build confidence grid (always needed for the line and as base grid)
+  grid_conf <- lb_grid(boot, focal = focal, n = n,
+                       interval = "confidence", ...)
+
+  # Build prediction grid if needed
+  if (interval %in% c("prediction", "both")) {
+    grid_pred <- lb_grid(boot, focal = focal, n = n,
+                         interval = "prediction", ...)
+  }
+
+  # Non-focal columns drive the group-interaction aesthetic (Amendment E).
+  # These are every column in the grid except the focal, the response
+  # statistics, and the group variable itself.
+  non_focal_cols <- if (!is.null(group)) {
+    setdiff(names(grid_conf), c(focal, ".fitted", ".lower", ".upper", group))
+  } else {
+    character(0L)
+  }
+
+  # Pre-compute an interaction factor so each unique (group × non-focal)
+  # combination gets its own ribbon/line, while color/fill/linetype are
+  # controlled by the group variable alone (for a legible legend).
+  if (!is.null(group)) {
+    make_grp_int <- function(df) {
+      if (length(non_focal_cols) == 0L) {
+        df[[group]]
+      } else {
+        do.call(interaction,
+                c(list(df[[group]]),
+                  lapply(non_focal_cols, function(nm) df[[nm]])))
+      }
+    }
+    grid_conf[[".grp_int"]] <- make_grp_int(grid_conf)
+    if (interval %in% c("prediction", "both")) {
+      grid_pred[[".grp_int"]] <- make_grp_int(grid_pred)
+    }
+  }
+
+  # Base ggplot: use confidence grid for structure
+  p <- ggplot2::ggplot(
+    grid_conf,
+    ggplot2::aes(x = .data[[focal]])
+  )
+
+  # --- Group aesthetic helper ---
+  make_group_aes <- function(extra = list()) {
+    if (is.null(group)) {
+      do.call(ggplot2::aes, extra)
+    } else {
+      do.call(ggplot2::aes, c(
+        list(color    = .data[[group]],
+             fill     = .data[[group]],
+             linetype = .data[[group]],
+             group    = .data$.grp_int),
+        extra
+      ))
+    }
+  }
+
+  # --- Ribbons ---
+  if (interval == "both") {
+    # Outer prediction ribbon (low alpha)
+    p <- p + ggplot2::geom_ribbon(
+      data    = grid_pred,
+      mapping = make_group_aes(list(ymin = .data$.lower,
+                                    ymax = .data$.upper)),
+      alpha   = alpha_ribbon * 0.5,
+      color   = NA
+    )
+    # Inner confidence ribbon (higher alpha)
+    p <- p + ggplot2::geom_ribbon(
+      mapping = make_group_aes(list(ymin = .data$.lower,
+                                    ymax = .data$.upper)),
+      alpha   = alpha_ribbon,
+      color   = NA
+    )
+  } else if (interval == "prediction") {
+    p <- p + ggplot2::geom_ribbon(
+      data    = grid_pred,
+      mapping = make_group_aes(list(ymin = .data$.lower,
+                                    ymax = .data$.upper)),
+      alpha   = alpha_ribbon,
+      color   = NA
+    )
+  } else {
+    # "confidence"
+    p <- p + ggplot2::geom_ribbon(
+      mapping = make_group_aes(list(ymin = .data$.lower,
+                                    ymax = .data$.upper)),
+      alpha   = alpha_ribbon,
+      color   = NA
+    )
+  }
+
+  # Mean prediction line (from confidence grid — same mean either way)
+  p <- p + ggplot2::geom_line(
+    mapping = make_group_aes(list(y = .data$.fitted)),
+    linewidth = 0.7
+  )
+
+  # --- Raw data overlay ---
+  if (!is.null(data)) {
+    raw_aes <- if (is.null(group)) {
+      ggplot2::aes(x = .data[[focal]], y = .data[[response_var]])
+    } else {
+      ggplot2::aes(x = .data[[focal]], y = .data[[response_var]],
+                   color = .data[[group]], shape = .data[[group]])
+    }
+    p <- p + ggplot2::geom_point(
+      data         = data,
+      mapping      = raw_aes,
+      inherit.aes  = FALSE,
+      alpha        = 0.7,
+      size         = 1.5
+    )
+  }
+
+  # --- Horizontal reference lines ---
+  if (!is.null(hlines)) {
+    n_hlines <- length(hlines)
+    if (is.null(hline_types)) {
+      hline_types <- c("solid", rep("dashed", max(0L, n_hlines - 1L)))
+    }
+    for (i in seq_len(n_hlines)) {
+      p <- p + ggplot2::geom_hline(
+        yintercept = hlines[i],
+        linetype   = hline_types[i],
+        color      = "grey30"
+      )
+    }
+  }
+
+  # --- Faceting ---
+  if (!is.null(facet)) {
+    p <- p + ggplot2::facet_grid(facet)
+  }
+
+  # --- Axis limits ---
+  if (!is.null(xlim) || !is.null(ylim)) {
+    p <- p + ggplot2::coord_cartesian(xlim = xlim, ylim = ylim)
+  }
+
+  p + ggplot2::theme_bw() +
+    ggplot2::labs(x = lx, y = ly, color = group, fill = group, shape = group)
 }

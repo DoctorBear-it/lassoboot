@@ -82,11 +82,11 @@ Useful links:
 }
 }
 \author{
-\strong{Maintainer}: DoctorBear-it \email{barrett310@gmail.com}
+\strong{Maintainer}: Timothy Barrett \email{dr.timothy.j.barrett@gmail.com} (\href{https://orcid.org/0000-0002-7703-1011}{ORCID})
 
 Authors:
 \itemize{
-  \item DoctorBear-it \email{barrett310@gmail.com}
+  \item Timothy Barrett \email{dr.timothy.j.barrett@gmail.com} (\href{https://orcid.org/0000-0002-7703-1011}{ORCID})
 }
 
 }

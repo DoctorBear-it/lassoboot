@@ -10,23 +10,81 @@ lb_normalize(spec, response, measured, reference)
 \item{spec}{An \code{lb_spec} object.}
 
 \item{response}{The column to create/overwrite as the normalized response
-(unquoted symbol). This column overwrites the LHS of the spec's formula.}
+(unquoted symbol). This column name replaces the LHS of the spec's formula.}
 
-\item{measured}{The measured response column (unquoted symbol).}
+\item{measured}{The measured response column (unquoted symbol). Must exist in
+\code{spec$data} and be declared in \code{spec$uncertainty}.}
 
-\item{reference}{The reference response column (unquoted symbol).}
+\item{reference}{The reference response column (unquoted symbol). Must exist
+in \code{spec$data} and be declared in \code{spec$uncertainty}.}
 }
 \value{
 An updated \code{lb_spec} object with the normalization registered as a
-derived column.
+derived column and the response column materialized.
 }
 \description{
-A convenience wrapper around \code{\link[=lb_derive]{lb_derive()}} for the pattern
-\code{response = measured / reference}, where both \code{measured} and \code{reference}
-carry their own measurement uncertainty and are perturbed independently in
-each bootstrap iteration. The user is responsible for declaring uncertainty
-on both columns and for ensuring the declared uncertainties are consistent
-with any pre-aggregation (e.g., if \code{reference} is a mean of triplicates,
-declare the standard error of that mean, not the single-measurement SD).
+A convenience wrapper for the pattern \code{response = measured / reference},
+where both \code{measured} and \code{reference} carry their own measurement uncertainty
+and are perturbed independently in each bootstrap iteration.
 }
-\keyword{internal}
+\details{
+\code{lb_normalize()} operates on an already-constructed \code{lb_spec}. It
+materializes the response column from \code{measured / reference} on \code{spec$data}
+so the spec's formula is valid for the initial fit, then registers an
+\code{\link[=lb_derive]{lb_derive()}} that recomputes the same expression inside the bootstrap loop
+on the perturbed inputs.
+
+\strong{Important — response column must pre-exist in \code{data}.}
+\code{\link[=lb_spec]{lb_spec()}} validates that the formula's left-hand side column exists in
+\code{data} before \code{lb_normalize()} can run. If \code{response} does not exist in the
+data passed to \code{\link[=lb_spec]{lb_spec()}}, the spec call will abort. The recommended pattern
+is to initialise the response column with placeholder values (\code{NA_real_} is
+fine) in the data frame before calling \code{\link[=lb_spec]{lb_spec()}}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{df$strength_ratio <- NA_real_          # placeholder; lb_normalize() overwrites
+spec <- lb_spec(strength_ratio ~ ...,  # formula LHS matches the placeholder
+                data = df, ...) |>
+  lb_normalize(response = strength_ratio,
+               measured  = meas_strength,
+               reference = ref_strength)
+}\if{html}{\out{</div>}}
+
+\code{lb_normalize()} overwrites the column with \code{measured / reference} on
+\code{spec$data} immediately, so the initial \code{\link[=lb_fit]{lb_fit()}} inside \code{\link[=lb_bootstrap]{lb_bootstrap()}}
+uses the correct ratio values.
+
+The user is responsible for declaring uncertainty on \strong{both} \code{measured} and
+\code{reference} (via \code{\link[=lb_uncertainty]{lb_uncertainty()}}). Forgetting to declare uncertainty on a
+normalization component is the kind of silent mistake that would invalidate
+the analysis; \code{lb_normalize()} treats it as a hard error.
+
+\strong{Pre-aggregation note:} If \code{reference} is the mean of triplicate
+measurements, the declared uncertainty should be the standard error of that
+mean (\verb{single-measurement SD / sqrt(n_replicates)}), not the
+single-measurement SD. The package propagates whatever you declare; it does
+not know about pre-aggregation.
+}
+\examples{
+\dontrun{
+# lb_spec() requires the response column to exist in `data` when the spec
+# is built. Initialise a placeholder; lb_normalize() overwrites it with the
+# correct ratio before the first lasso fit.
+concrete_with_ref$strength_ratio <- NA_real_   # placeholder
+
+spec <- lb_spec(
+  strength_ratio ~ clayHOH + alumina,
+  data        = concrete_with_ref,
+  uncertainty = lb_uncertainty(
+    meas_strength = cov(3.0, "ASTM C109"),
+    ref_strength  = cov(2.2, "ASTM C109, mean of 3")
+  )
+) |>
+  lb_normalize(
+    response  = strength_ratio,
+    measured  = meas_strength,
+    reference = ref_strength
+  )
+# spec$data$strength_ratio now holds meas_strength / ref_strength for every
+# row; each bootstrap iteration recomputes the ratio from perturbed inputs.
+}
+}

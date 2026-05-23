@@ -17,7 +17,8 @@ lb_control(
   progress = interactive(),
   seed = NULL,
   intercept = TRUE,
-  standardize = TRUE
+  standardize = TRUE,
+  precision = "single"
 )
 }
 \arguments{
@@ -42,9 +43,10 @@ enabling stability diagnostics? Default \code{TRUE}.}
 Off by default; only needed for per-model diagnostics. Default \code{FALSE}.}
 
 \item{sigma_method}{Residual SE estimation method: \code{"refit"} (default —
-OLS on selected variables, closes the under-coverage gap from
-regularisation-shrunk residuals), \code{"naive"} (matches prototype, biased
-low under regularisation), or \code{"cv"} (out-of-fold, slow but most honest).}
+OLS on lasso-selected variables; appropriate for prediction-band work and
+more conservative than \code{"naive"}), \code{"naive"} (\code{sd(y - fitted_lasso)};
+correct for characterizing scatter around the predictive model), or \code{"cv"}
+(out-of-fold CV residuals; slow but most honest).}
 
 \item{parallel}{Logical. Use \code{future}/\code{furrr} for parallelism? Errors
 helpfully if those packages are absent. Default \code{FALSE}.}
@@ -64,6 +66,12 @@ that exact seed is used and stored. The bootstrap runs under
 
 \item{standardize}{Logical. Standardize predictors? Passed to the engine.
 Default \code{TRUE}.}
+
+\item{precision}{Which precision level to use when \code{lb_uncertainty()} declares
+two levels. \code{"single"} (default) uses within-laboratory (single-operator)
+precision; \code{"multi"} uses multi-laboratory reproducibility. When
+\code{lb_uncertainty()} was called with only one value per predictor, this
+argument has no effect.}
 }
 \value{
 An \code{lb_control} object (a validated, classed list). The print method
@@ -79,4 +87,7 @@ lb_control()
 
 # Non-default: 3 folds, naive sigma, fixed seed
 lb_control(cv_folds = 3L, sigma_method = "naive", seed = 42L)
+
+# Multi-laboratory precision (requires multi values in lb_uncertainty())
+lb_control(precision = "multi")
 }

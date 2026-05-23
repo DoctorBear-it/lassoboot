@@ -1,26 +1,35 @@
 # Internal: estimate residual standard error using the specified method.
 #
 # "refit" (default): refit OLS on lasso-selected variables; use that model's
-#   residual SE. Largely closes the under-coverage gap caused by lasso's
-#   residual shrinkage. Adds one lm() call per fit.
-# "naive": sd(y - fitted_lasso). Matches the prototype; biased low under
-#   regularisation because lasso shrinks residuals along with coefficients.
+#   residual SE. More conservative than naive. Appropriate for prediction-band
+#   work and adds only one lm() call per fit.
+# "naive": sd(y - fitted_lasso). Measures scatter around the actual predictive
+#   model — the correct choice if your primary output is prediction envelopes
+#   rather than coefficient distributions.
 # "cv": out-of-fold CV residuals accumulated via cv.glmnet(keep = TRUE).
 #   Most honest but slow.
+#
+# The `lambda` argument is the scalar lambda at which coefficients/predictions
+# should be evaluated. When NULL, falls back to fit_obj$lambda[1L].
 .estimate_sigma <- function(fit_obj, x, y,
-                             method  = c("refit", "naive", "cv"),
-                             foldid  = NULL,
+                             method      = c("refit", "naive", "cv"),
+                             lambda      = NULL,
+                             engine      = NULL,
+                             foldid      = NULL,
+                             intercept   = TRUE,
+                             standardize = TRUE,
                              ...) {
   method <- match.arg(method)
+  lam    <- lambda %||% fit_obj$lambda[1L]
   switch(method,
-    refit = .sigma_refit(fit_obj, x, y),
-    naive = .sigma_naive(fit_obj, x, y),
+    refit = .sigma_refit(fit_obj, x, y, lam),
+    naive = .sigma_naive(fit_obj, x, y, lam),
     cv    = .sigma_cv(fit_obj, x, y, foldid = foldid)
   )
 }
 
-.sigma_refit <- function(fit_obj, x, y) {
-  cf     <- glmnet::coef.glmnet(fit_obj, s = fit_obj$lambda[1L])
+.sigma_refit <- function(fit_obj, x, y, lambda) {
+  cf     <- glmnet::coef.glmnet(fit_obj, s = lambda)
   cf_vec <- as.numeric(cf)
   # Skip intercept (index 1) when identifying selected predictors
   nonzero_idx <- which(cf_vec[-1L] != 0)
@@ -42,16 +51,16 @@
       c("OLS refit has {df} degree{?s} of freedom ({p_sel} predictors, {n} obs).",
         "i" = "Falling back to naive sigma.")
     )
-    return(.sigma_naive(fit_obj, x, y))
+    return(.sigma_naive(fit_obj, x, y, lambda))
   }
 
   lm_fit <- stats::lm.fit(cbind(1, X_sel), y)
   sqrt(sum(lm_fit$residuals^2) / df)
 }
 
-.sigma_naive <- function(fit_obj, x, y) {
+.sigma_naive <- function(fit_obj, x, y, lambda) {
   fitted_vals <- as.numeric(
-    stats::predict(fit_obj, newx = x, s = fit_obj$lambda[1L], type = "response")
+    stats::predict(fit_obj, newx = x, s = lambda, type = "response")
   )
   stats::sd(y - fitted_vals)
 }

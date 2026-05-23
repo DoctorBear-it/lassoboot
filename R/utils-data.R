@@ -1,4 +1,15 @@
 # Internal data-wrangling helpers.
+
+# Emit a deprecation or other warning at most once per session.
+# `key` is a unique string used to track whether the warning has been shown.
+.warn_once <- local({
+  shown <- character(0L)
+  function(key, msg) {
+    if (key %in% shown) return(invisible(NULL))
+    shown <<- c(shown, key)
+    cli::cli_warn(msg)
+  }
+})
 # Functions here are not exported; place any bare column name references used
 # via NSE in aaa_globals.R to silence R CMD CHECK "no visible binding" notes.
 

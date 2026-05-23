@@ -122,47 +122,67 @@ test_that("lb_correlated_pairs returns empty tibble for uncorrelated data", {
   expect_equal(nrow(pairs), 0L)
 })
 
-# ---- lb_is_significant() ----------------------------------------------------
+# ---- lb_filter_stable() (v0.2.0 primary API) ---------------------------------
 
-test_that("lb_is_significant returns a logical vector", {
+test_that("lb_filter_stable returns a logical vector", {
   boot <- make_stab_boot()
   td   <- tidy(boot)
-  expect_type(lb_is_significant(td, method = "ci"),        "logical")
-  expect_type(lb_is_significant(td, method = "selection"), "logical")
-  expect_type(lb_is_significant(td, method = "stability"), "logical")
-  expect_type(lb_is_significant(td, method = "all"),       "logical")
+  expect_type(lb_filter_stable(td, min_selection_prob = 0.5),   "logical")
+  expect_type(lb_filter_stable(td, min_stability_score = 0.5),  "logical")
+  expect_type(lb_filter_stable(td, quantiles_exclude_zero = TRUE), "logical")
 })
 
-test_that("lb_is_significant length equals nrow(tidy_df)", {
+test_that("lb_filter_stable length equals nrow(tidy_df)", {
   boot <- make_stab_boot()
   td   <- tidy(boot)
-  for (m in c("ci", "selection", "stability", "all")) {
-    expect_equal(length(lb_is_significant(td, method = m)), nrow(td))
-  }
+  expect_equal(length(lb_filter_stable(td, min_selection_prob = 0.5)), nrow(td))
 })
 
-test_that("lb_is_significant 'ci' flags terms whose CI excludes zero", {
+test_that("lb_filter_stable min_selection_prob respects threshold", {
   boot <- make_stab_boot()
   td   <- tidy(boot)
-  sig  <- lb_is_significant(td, method = "ci")
-  manual <- td$conf.low > 0 | td$conf.high < 0
-  expect_equal(sig, manual)
+  keep <- lb_filter_stable(td, min_selection_prob = 0.5)
+  expect_equal(keep, td$selection_prob >= 0.5)
 })
 
-test_that("lb_is_significant 'selection' respects threshold", {
+test_that("lb_filter_stable min_stability_score respects threshold", {
   boot <- make_stab_boot()
   td   <- tidy(boot)
-  sig  <- lb_is_significant(td, method = "selection", threshold = 0.5)
+  keep <- lb_filter_stable(td, min_stability_score = 0.8)
+  expect_equal(keep, td$stability_score >= 0.8)
+})
+
+test_that("lb_filter_stable quantiles_exclude_zero uses q025/q975 columns", {
+  boot <- make_stab_boot()
+  td   <- tidy(boot)
+  keep <- lb_filter_stable(td, quantiles_exclude_zero = TRUE)
+  manual <- td$q025 > 0 | td$q975 < 0
+  expect_equal(keep, manual)
+})
+
+test_that("lb_filter_stable combines criteria with AND logic", {
+  boot <- make_stab_boot()
+  td   <- tidy(boot)
+  keep <- lb_filter_stable(td, min_selection_prob = 0.5,
+                           min_stability_score = 0.5)
+  expected <- (td$selection_prob >= 0.5) & (td$stability_score >= 0.5)
+  expect_equal(keep, expected)
+})
+
+# ---- lb_is_significant() (deprecated wrapper) --------------------------------
+
+test_that("lb_is_significant emits a deprecation warning", {
+  boot <- make_stab_boot()
+  td   <- tidy(boot)
+  expect_warning(lb_is_significant(td, method = "selection"),
+                 "deprecated")
+})
+
+test_that("lb_is_significant 'selection' still works after deprecation warning", {
+  boot <- make_stab_boot()
+  td   <- tidy(boot)
+  suppressWarnings(
+    sig <- lb_is_significant(td, method = "selection", threshold = 0.5)
+  )
   expect_equal(sig, td$selection_prob >= 0.5)
-})
-
-test_that("lb_is_significant 'all' is conjunction of all three", {
-  boot <- make_stab_boot()
-  td   <- tidy(boot)
-  th   <- 0.5
-  sig_all <- lb_is_significant(td, method = "all", threshold = th)
-  ci_sig  <- td$conf.low > 0 | td$conf.high < 0
-  sel_sig <- td$selection_prob >= th
-  stb_sig <- td$stability_score >= th
-  expect_equal(sig_all, ci_sig & sel_sig & stb_sig)
 })

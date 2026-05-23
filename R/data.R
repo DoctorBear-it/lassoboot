@@ -63,14 +63,18 @@
 #' predictor and response columns in [concrete]. Pass directly to the
 #' `uncertainty` argument of [lb_spec()].
 #'
-#' @format A tibble with 5 rows and 4 variables:
+#' @format A tibble with 5 rows and 4 variables (legacy single-precision format;
+#'   compatible with all `lassoboot` versions):
 #' \describe{
 #'   \item{term}{Character. Column name in [concrete] the uncertainty applies
 #'     to.}
 #'   \item{type}{Character. Uncertainty type: `"std"` (absolute standard
 #'     deviation, in the units of `term`) or `"cov"` (coefficient of
 #'     variation as a percentage).}
-#'   \item{value}{Numeric. Uncertainty magnitude.}
+#'   \item{value}{Numeric. Single-operator (within-lab) uncertainty magnitude.
+#'     In v0.2.0+, use [lb_uncertainty()] with the `multi` argument to declare
+#'     two precision levels (`value_single`, `value_multi`). This dataset uses
+#'     the legacy single-column format which is backward-compatible.}
 #'   \item{source}{Character. Normative source documenting the uncertainty.}
 #' }
 #'

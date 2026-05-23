@@ -2,7 +2,7 @@
 % Please edit documentation in R/stability.R
 \name{lb_is_significant}
 \alias{lb_is_significant}
-\title{Test whether terms meet a significance criterion}
+\title{Test whether terms meet a significance criterion (deprecated)}
 \usage{
 lb_is_significant(
   tidy_df,
@@ -22,19 +22,19 @@ methods. Default \code{0.5}.}
 A logical vector the same length as \code{nrow(tidy_df)}.
 }
 \description{
-A convenience predicate for use in \code{\link[dplyr:filter]{dplyr::filter()}}. Three complementary
-criteria: bootstrap CI exclusion of zero (\code{"ci"}), selection probability
-threshold (\code{"selection"}), stability score threshold (\code{"stability"}), or all
-three simultaneously (\code{"all"}).
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+
+Deprecated in favour of \code{\link[=lb_filter_stable]{lb_filter_stable()}}, which uses more precise
+language and a more flexible argument structure. \code{lb_is_significant()} still
+works but emits a one-time warning per session.
 }
 \examples{
-# Construct a minimal tidy-style tibble to demonstrate the predicate
-td <- data.frame(
-  conf.low        = c(-0.5,  0.1, -0.2),
-  conf.high       = c(-0.1,  0.8,  0.3),
-  selection_prob  = c( 0.9,  0.7,  0.2),
-  stability_score = c( 0.85, 0.65, 0.15)
-)
-lb_is_significant(td, method = "ci")
-lb_is_significant(td, method = "selection", threshold = 0.6)
+set.seed(1)
+n  <- 40
+df <- data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
+df$y <- 2 * df$x1 + rnorm(n)
+spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
+boot <- lb_bootstrap(spec, B = 20)
+td <- tidy(boot)
+lb_is_significant(td, method = "selection", threshold = 0.5)
 }

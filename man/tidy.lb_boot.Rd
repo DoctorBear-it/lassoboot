@@ -4,13 +4,15 @@
 \alias{tidy.lb_boot}
 \title{Tidy bootstrap coefficients into a one-row-per-term tibble}
 \usage{
-\method{tidy}{lb_boot}(x, conf.level = 0.95, scale = c("raw", "gelman"), ...)
+\method{tidy}{lb_boot}(x, probs = c(0.025, 0.975), scale = c("raw", "gelman"), ...)
 }
 \arguments{
 \item{x}{An \code{lb_boot} object.}
 
-\item{conf.level}{Confidence level for the bootstrap quantile interval.
-Default \code{0.95}.}
+\item{probs}{Numeric vector of quantile probabilities to report. Column names
+are \code{q} followed by \code{round(p * 1000)}, zero-padded to 3 digits
+(e.g. \code{probs = c(0.025, 0.975)} → columns \code{q025} and \code{q975}).
+Default \code{c(0.025, 0.975)}.}
 
 \item{scale}{\code{"raw"} (default, original units) or \code{"gelman"} (2-SD scaling
 per Gelman 2008, placing all numeric predictors on a comparable axis).}
@@ -18,14 +20,44 @@ per Gelman 2008, placing all numeric predictors on a comparable axis).}
 \item{...}{Unused; for S3 compatibility.}
 }
 \value{
-A tibble with columns: \code{term}, \code{estimate} (bootstrap mean over all
-B iterations, zeros included), \code{estimate_median}, \code{std.error}, \code{conf.low},
-\code{conf.high}, \code{selection_prob}, \code{n_selected}, \code{stability_score}.
+A tibble with columns \code{term}, \code{mean}, \code{median}, \code{sd},
+one column per element of \code{probs} (\code{q025}, \code{q975}, etc.),
+\code{selection_prob}, \code{n_selected}, \code{stability_score}.
 \code{(Intercept)} is dropped.
 }
 \description{
-Tidy bootstrap coefficients into a one-row-per-term tibble
+Summarises the bootstrap distribution of the fitted-model coefficient for
+each predictor. \strong{These are not estimates of underlying parameters} and the
+quantile columns are not confidence intervals in the frequentist coverage
+sense. The bootstrap distribution describes how each coefficient varies across
+data realizations consistent with the declared measurement uncertainty.
 }
+\note{
+The quantile columns (\code{q025}, \code{q975}) are \strong{not} classical confidence
+intervals on the true parameter value. They are empirical quantiles of the
+bootstrap coefficient distribution, zeros padded for unselected iterations.
+Use \code{selection_prob} and \code{stability_score} as the primary inferential
+outputs; treat these quantile columns as supplementary indicators of
+effect-size stability across data realizations.
+}
+\section{Column descriptions}{
+
+\itemize{
+\item \code{mean}, \code{median}, \code{sd}: central tendency and spread of the bootstrap
+coefficient distribution. Iterations where the predictor was not selected
+contribute a coefficient of zero to these summaries.
+\item \code{q025}, \code{q975} (and other user-specified quantile columns): empirical
+quantiles of the bootstrap coefficient distribution, named \code{q} followed by
+the probability × 1000 zero-padded to 3 digits.
+\item \code{selection_prob}: the fraction of bootstrap replicates in which this
+predictor was retained by the LASSO under measurement-uncertainty
+perturbation. \strong{This is the primary inferential output.}
+\item \code{n_selected}: count of replicates in which the predictor was selected.
+\item \code{stability_score}: maximum selection probability along the LASSO
+regularization path.
+}
+}
+
 \examples{
 set.seed(1)
 n  <- 40
@@ -34,4 +66,5 @@ df$y <- 2 * df$x1 + rnorm(n)
 spec <- suppressMessages(lb_spec(y ~ x1 + x2 + x3, data = df))
 boot <- lb_bootstrap(spec, B = 5)
 tidy(boot)
+tidy(boot, probs = c(0.05, 0.95))
 }

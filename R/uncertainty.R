@@ -8,12 +8,13 @@
 #'
 #' Inside `lb_uncertainty(...)` calls, three short helpers are available:
 #'
-#' - `std(value, source)` — absolute standard deviation in the units of the
-#'   column.
-#' - `cov(value, source)` — coefficient of variation as a **percentage**
-#'   (`cov(4.0, ...)` means 4%, not 400%).
-#' - `rel(value, source)` — relative standard deviation as a **fraction**
-#'   (`rel(0.04, ...)` is equivalent to `cov(4.0, ...)`).
+#' - `std(value, multi = NULL, source)` — absolute standard deviation in the
+#'   units of the column. `value` is the single-operator (within-lab) precision;
+#'   `multi` (optional) is the multi-laboratory reproducibility.
+#' - `cov(value, multi = NULL, source)` — coefficient of variation as a
+#'   **percentage** (`cov(4.0, ...)` means 4%, not 400%).
+#' - `rel(value, multi = NULL, source)` — relative standard deviation as a
+#'   **fraction** (`rel(0.04, ...)` is equivalent to `cov(4.0, ...)`).
 #'
 #' These helpers are **only available inside `lb_uncertainty()`** — they do not
 #' appear in the package namespace and do not shadow `stats::cov()` or any
@@ -21,17 +22,41 @@
 #' arguments in a child environment that defines `std`, `cov`, and `rel`;
 #' outside that call, the names resolve normally.
 #'
+#' ## Multi-laboratory precision
+#'
+#' Supply the named `multi` argument to declare two precision levels:
+#'
+#' ```r
+#' lb_uncertainty(
+#'   alumina = std(0.071, multi = 0.213, source = "ASTM C114")
+#' )
+#' ```
+#'
+#' Switch between levels with `lb_control(precision = "single")` (default) or
+#' `lb_control(precision = "multi")`.
+#'
+#' v0.1 calls like `std(0.071, "ASTM C114")` continue to work unchanged
+#' and set `multi = single = 0.071`.
+#'
 #' @param ... Named arguments `column = std(value)`, `column = cov(value)`, or
 #'   `column = rel(value)`. Alternatively, a single pre-built tibble with
-#'   columns `term`, `type`, `value`, and optionally `source`.
+#'   columns `term`, `type`, and either `value` (backfilled for single/multi)
+#'   or `value_single` and `value_multi`.
 #'
 #' @return A tibble with columns `term` (chr), `type` (chr: `"std"/"cov"/"rel"`),
-#'   `value` (dbl, >= 0), `source` (chr).
+#'   `value_single` (dbl, >= 0), `value_multi` (dbl, >= 0), `source` (chr).
 #' @examples
+#' # Single precision level (v0.1 compatible)
 #' lb_uncertainty(
 #'   alumina  = std(0.071, "ASTM C114"),
 #'   SSA      = cov(0.56,  "Mfr certificate of analysis"),
-#'   strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
+#'   strength = cov(4.0,   "ASTM C109 single-operator")
+#' )
+#'
+#' # Two precision levels (v0.2.0+)
+#' lb_uncertainty(
+#'   alumina  = std(0.071, multi = 0.213, source = "ASTM C114"),
+#'   strength = cov(4.0,   multi = 7.8,   source = "ASTM C109")
 #' )
 #' @export
 lb_uncertainty <- function(...) {
@@ -89,10 +114,11 @@ lb_uncertainty <- function(...) {
       )
     }
     rows[[i]] <- tibble::tibble(
-      term   = nms[i],
-      type   = result$type,
-      value  = result$value,
-      source = result$source
+      term         = nms[i],
+      type         = result$type,
+      value_single = result$value_single,
+      value_multi  = result$value_multi,
+      source       = result$source
     )
   }
 
@@ -105,46 +131,81 @@ lb_uncertainty <- function(...) {
 # explicit prefix to avoid any ambiguity with this internal .unc_cov helper.
 # ---------------------------------------------------------------------------
 
-.unc_entry <- function(type, value, source) {
-  if (!is.numeric(value) || length(value) != 1L) {
-    cli::cli_abort("{.arg value} must be a single number; got {.cls {class(value)}}.")
+.unc_entry <- function(type, value_single, value_multi, source) {
+  .check_unc_value <- function(v, label) {
+    if (!is.numeric(v) || length(v) != 1L) {
+      cli::cli_abort("{.arg {label}} must be a single number; got {.cls {class(v)}}.")
+    }
+    if (is.na(v)) {
+      cli::cli_abort("{.arg {label}} must not be NA. Omit the column from the spec instead.")
+    }
+    if (v < 0) {
+      cli::cli_abort("{.arg {label}} must be >= 0; got {v}.")
+    }
   }
-  if (is.na(value)) {
-    cli::cli_abort("{.arg value} must not be NA. Omit the column from the spec instead.")
-  }
-  if (value < 0) {
-    cli::cli_abort("{.arg value} must be >= 0; got {value}.")
-  }
+  .check_unc_value(value_single, "value")
+  .check_unc_value(value_multi,  "multi")
   if (!is.character(source) || length(source) != 1L) {
     cli::cli_abort("{.arg source} must be a single string or NA_character_.")
   }
-  structure(list(type = type, value = value, source = source),
-            class = ".lb_unc_entry")
+  structure(
+    list(type = type, value_single = value_single,
+         value_multi = value_multi, source = source),
+    class = ".lb_unc_entry"
+  )
 }
 
-.unc_std <- function(value, source = NA_character_) {
-  .unc_entry("std", value, source)
+# Signature: std(value, multi = NULL, source = NA_character_)
+# The `multi = NULL` default lets v0.1 positional calls like std(0.071, "ASTM")
+# continue to work: when the second positional arg is a string, it binds to
+# `source`, not to `multi`. When `multi` is NULL it is backfilled from value.
+.unc_std <- function(value, multi = NULL, source = NA_character_) {
+  if (!is.null(multi) && is.character(multi) && is.na(source)) {
+    # Called as std(0.071, "ASTM C114") — positional source, no multi
+    source <- multi
+    multi  <- NULL
+  }
+  if (is.null(multi)) multi <- value
+  .unc_entry("std", value, multi, source)
 }
 
-.unc_cov <- function(value, source = NA_character_) {
-  .unc_entry("cov", value, source)
+.unc_cov <- function(value, multi = NULL, source = NA_character_) {
+  if (!is.null(multi) && is.character(multi) && is.na(source)) {
+    source <- multi
+    multi  <- NULL
+  }
+  if (is.null(multi)) multi <- value
+  .unc_entry("cov", value, multi, source)
 }
 
-.unc_rel <- function(value, source = NA_character_) {
-  .unc_entry("rel", value, source)
+.unc_rel <- function(value, multi = NULL, source = NA_character_) {
+  if (!is.null(multi) && is.character(multi) && is.na(source)) {
+    source <- multi
+    multi  <- NULL
+  }
+  if (is.null(multi)) multi <- value
+  .unc_entry("rel", value, multi, source)
 }
 
 # ---------------------------------------------------------------------------
 # Internal: validate a pre-built uncertainty tibble.
+# Accepts either old-style (value) or new-style (value_single, value_multi).
 # ---------------------------------------------------------------------------
 .validate_uncertainty_tbl <- function(tbl) {
-  required <- c("term", "type", "value")
-  missing_cols <- setdiff(required, names(tbl))
-  if (length(missing_cols) > 0L) {
+  required_old <- c("term", "type", "value")
+  required_new <- c("term", "type", "value_single", "value_multi")
+
+  has_old <- all(required_old %in% names(tbl))
+  has_new <- all(c("term", "type", "value_single") %in% names(tbl))
+
+  if (!has_old && !has_new) {
     cli::cli_abort(
-      "Uncertainty tibble is missing column{?s}: {.val {missing_cols}}."
+      "Uncertainty tibble must have columns {.val term}, {.val type}, and
+       either {.val value} (backfilled) or {.val value_single}
+       (and optionally {.val value_multi})."
     )
   }
+
   valid_types <- c("std", "cov", "rel")
   bad_types <- setdiff(unique(tbl$type), valid_types)
   if (length(bad_types) > 0L) {
@@ -153,16 +214,44 @@ lb_uncertainty <- function(...) {
         "i" = "Must be one of {.val {valid_types}}.")
     )
   }
-  if (any(is.na(tbl$value))) {
-    cli::cli_abort("Column {.col value} must not contain NA.")
+
+  if (has_old && !has_new) {
+    # Back-fill from old-style `value` column
+    if (any(is.na(tbl$value))) {
+      cli::cli_abort("Column {.col value} must not contain NA.")
+    }
+    if (any(tbl$value < 0, na.rm = TRUE)) {
+      cli::cli_abort("Column {.col value} must be >= 0 for all rows.")
+    }
+    tbl$value_single <- tbl$value
+    tbl$value_multi  <- tbl$value
+    tbl$value        <- NULL
+  } else {
+    # New-style: validate value_single; backfill value_multi if missing
+    if (any(is.na(tbl$value_single))) {
+      cli::cli_abort("Column {.col value_single} must not contain NA.")
+    }
+    if (any(tbl$value_single < 0, na.rm = TRUE)) {
+      cli::cli_abort("Column {.col value_single} must be >= 0 for all rows.")
+    }
+    if (!"value_multi" %in% names(tbl)) {
+      tbl$value_multi <- tbl$value_single
+    } else {
+      if (any(is.na(tbl$value_multi))) {
+        cli::cli_abort("Column {.col value_multi} must not contain NA.")
+      }
+      if (any(tbl$value_multi < 0, na.rm = TRUE)) {
+        cli::cli_abort("Column {.col value_multi} must be >= 0 for all rows.")
+      }
+    }
   }
-  if (any(tbl$value < 0, na.rm = TRUE)) {
-    cli::cli_abort("Column {.col value} must be >= 0 for all rows.")
-  }
+
   if (!"source" %in% names(tbl)) {
     tbl$source <- NA_character_
   }
-  tibble::as_tibble(tbl)
+
+  # Return in canonical column order
+  tibble::as_tibble(tbl[, c("term", "type", "value_single", "value_multi", "source")])
 }
 
 # Internal: validate uncertainty column names against data.

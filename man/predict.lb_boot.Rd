@@ -8,7 +8,7 @@
   object,
   newdata = NULL,
   type = c("response", "coef"),
-  interval = c("none", "confidence"),
+  interval = c("none", "confidence", "prediction"),
   level = 0.95,
   B_sub = NULL,
   ...
@@ -22,9 +22,20 @@ predict on training data. Default \code{NULL}.}
 
 \item{type}{\code{"response"} (default) or \code{"coef"}.}
 
-\item{interval}{\code{"none"} (default) or \code{"confidence"}.}
+\item{interval}{One of \code{"none"} (default), \code{"confidence"}, or \code{"prediction"}.
+\itemize{
+\item \code{"confidence"}: quantiles of the bootstrap \strong{fitted-mean} distribution
+— where the model's mean function lives given measurement-uncertainty
+perturbation. This is the headline scientific output for inferring
+relationships.
+\item \code{"prediction"}: confidence band \strong{plus} residual draws
+ε ~ N(0, σ̂²) — describes where a single new observation at X would land.
+Uses per-iteration σ̂ when available (stored in \code{boot$sigma_hats});
+falls back to \code{boot$fit$sigma_hat} with a one-time informative message.
+\item \code{"none"}: \code{.fitted} only.
+}}
 
-\item{level}{Confidence level. Default \code{0.95}.}
+\item{level}{Confidence/prediction level. Default \code{0.95}.}
 
 \item{B_sub}{Subsample this many bootstrap iterations for speed, or \code{NULL}
 to use all. Default \code{NULL}.}
@@ -32,7 +43,7 @@ to use all. Default \code{NULL}.}
 \item{...}{Unused; for S3 compatibility.}
 }
 \value{
-A tibble with \code{.fitted} and, if \code{interval = "confidence"}, \code{.lower}
+A tibble with \code{.fitted} and, when \code{interval != "none"}, \code{.lower}
 and \code{.upper}.
 }
 \description{

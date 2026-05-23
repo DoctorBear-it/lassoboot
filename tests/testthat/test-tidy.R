@@ -15,11 +15,12 @@ make_tidy_boot <- function(n = 60, p = 4, data_seed = 1L, B = 30L,
 
 # ---- tidy() schema -----------------------------------------------------------
 
-test_that("tidy.lb_boot returns the 9 documented columns", {
+test_that("tidy.lb_boot returns the v0.2.0 documented columns", {
   boot <- make_tidy_boot()
   td   <- tidy(boot)
-  expected <- c("term", "estimate", "estimate_median", "std.error",
-                "conf.low", "conf.high", "selection_prob", "n_selected",
+  expected <- c("term", "mean", "median", "sd",
+                "q025", "q975",
+                "selection_prob", "n_selected",
                 "stability_score")
   expect_named(td, expected)
 })
@@ -48,20 +49,27 @@ test_that("n_selected <= B for every row", {
   expect_true(all(td$n_selected <= boot$B))
 })
 
-test_that("conf.level changes the interval width", {
-  boot  <- make_tidy_boot()
-  td95  <- tidy(boot, conf.level = 0.95)
-  td80  <- tidy(boot, conf.level = 0.80)
+test_that("probs argument changes the quantile interval width", {
+  boot <- make_tidy_boot()
+  td95 <- tidy(boot, probs = c(0.025, 0.975))
+  td80 <- tidy(boot, probs = c(0.10,  0.90))
   # 95% interval should be at least as wide as 80%
-  width95 <- td95$conf.high - td95$conf.low
-  width80 <- td80$conf.high - td80$conf.low
+  width95 <- td95$q975 - td95$q025
+  width80 <- td80$q900 - td80$q100
   expect_true(all(width95 >= width80 - 1e-10))
 })
 
-test_that("invalid conf.level is rejected", {
+test_that("probs produces correctly named quantile columns", {
   boot <- make_tidy_boot()
-  expect_error(tidy(boot, conf.level = 1.5), "conf.level")
-  expect_error(tidy(boot, conf.level = 0),   "conf.level")
+  td   <- tidy(boot, probs = c(0.05, 0.95))
+  expect_true("q050" %in% names(td))
+  expect_true("q950" %in% names(td))
+})
+
+test_that("invalid probs is rejected", {
+  boot <- make_tidy_boot()
+  expect_error(tidy(boot, probs = c(1.5, 0.5)), "probs")
+  expect_error(tidy(boot, probs = numeric(0)),   "probs")
 })
 
 # ---- stability_score --------------------------------------------------------
@@ -80,7 +88,7 @@ test_that("stability_score is in [0, 1] when store_path = TRUE", {
 
 # ---- Gelman scaling ---------------------------------------------------------
 
-test_that("scale = 'gelman' multiplies estimate by 2*sd(predictor)", {
+test_that("scale = 'gelman' multiplies mean by 2*sd(predictor)", {
   boot   <- make_tidy_boot()
   td_raw <- tidy(boot, scale = "raw")
   td_gel <- tidy(boot, scale = "gelman")
@@ -90,8 +98,8 @@ test_that("scale = 'gelman' multiplies estimate by 2*sd(predictor)", {
   term   <- "x1"
   if (!term %in% td_raw$term) skip("x1 not in tidy output for this seed")
 
-  est_raw <- td_raw$estimate[td_raw$term == term]
-  est_gel <- td_gel$estimate[td_gel$term == term]
+  est_raw <- td_raw$mean[td_raw$term == term]
+  est_gel <- td_gel$mean[td_gel$term == term]
   sf_expected <- 2 * stats::sd(data[[term]])
 
   expect_equal(est_gel / est_raw, sf_expected, tolerance = 1e-10)
@@ -102,7 +110,7 @@ test_that("scale = 'raw' and scale = 'gelman' differ on numeric predictors", {
   td_raw <- tidy(boot, scale = "raw")
   td_gel <- tidy(boot, scale = "gelman")
   # At least one row should differ
-  expect_false(isTRUE(all.equal(td_raw$estimate, td_gel$estimate)))
+  expect_false(isTRUE(all.equal(td_raw$mean, td_gel$mean)))
 })
 
 # ---- glance() ---------------------------------------------------------------

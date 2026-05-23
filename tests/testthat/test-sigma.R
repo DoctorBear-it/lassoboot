@@ -4,9 +4,10 @@ test_that("sigma naive matches sd(y - fitted)", {
   x <- Matrix::Matrix(matrix(rnorm(n * p), n, p), sparse = TRUE)
   y <- rnorm(n)
   fit <- glmnet::glmnet(x, y, alpha = 1, lambda = 0.01)
+  lam <- fit$lambda[1L]
 
-  sigma_n       <- lassoboot:::.sigma_naive(fit, x, y)
-  fitted_manual <- as.numeric(predict(fit, newx = x, s = fit$lambda[1L]))
+  sigma_n       <- lassoboot:::.sigma_naive(fit, x, y, lam)
+  fitted_manual <- as.numeric(predict(fit, newx = x, s = lam))
   expect_equal(sigma_n, sd(y - fitted_manual))
   expect_gt(sigma_n, 0)
 })
@@ -18,11 +19,12 @@ test_that("sigma refit matches direct lm on selected vars", {
   y     <- x_mat[, 1L] + x_mat[, 2L] + rnorm(n, sd = 0.5)
   x     <- Matrix::Matrix(x_mat, sparse = TRUE)
   fit   <- glmnet::glmnet(x, y, alpha = 1, lambda = 0.05)
+  lam   <- fit$lambda[1L]
 
-  sigma_r <- lassoboot:::.sigma_refit(fit, x, y)
+  sigma_r <- lassoboot:::.sigma_refit(fit, x, y, lam)
   expect_gt(sigma_r, 0)
 
-  cf          <- as.numeric(coef(fit, s = fit$lambda[1L]))
+  cf          <- as.numeric(coef(fit, s = lam))
   nonzero_idx <- which(cf[-1L] != 0)
   if (length(nonzero_idx) > 0L) {
     X_sel      <- as.matrix(x[, nonzero_idx, drop = FALSE])
@@ -52,12 +54,13 @@ test_that("all three sigma methods return positive finite scalars", {
   fit <- glmnet::glmnet(x, y, alpha = 1, lambda = 0.02)
   foldid <- sample(rep_len(1:5, n))
 
-  expect_gt(lassoboot:::.estimate_sigma(fit, x, y, method = "refit"),             0)
-  expect_gt(lassoboot:::.estimate_sigma(fit, x, y, method = "naive"),             0)
+  lam <- fit$lambda[1L]
+  expect_gt(lassoboot:::.estimate_sigma(fit, x, y, method = "refit", lambda = lam), 0)
+  expect_gt(lassoboot:::.estimate_sigma(fit, x, y, method = "naive", lambda = lam), 0)
   expect_gt(lassoboot:::.estimate_sigma(fit, x, y, method = "cv", foldid = foldid), 0)
 
-  expect_true(is.finite(lassoboot:::.estimate_sigma(fit, x, y, method = "refit")))
-  expect_true(is.finite(lassoboot:::.estimate_sigma(fit, x, y, method = "naive")))
+  expect_true(is.finite(lassoboot:::.estimate_sigma(fit, x, y, method = "refit", lambda = lam)))
+  expect_true(is.finite(lassoboot:::.estimate_sigma(fit, x, y, method = "naive", lambda = lam)))
 })
 
 test_that("sigma refit falls back gracefully when nothing is selected", {
@@ -68,8 +71,9 @@ test_that("sigma refit falls back gracefully when nothing is selected", {
   # Very large lambda forces all coefficients to zero
   fit <- glmnet::glmnet(x, y, alpha = 1, lambda = 1e6)
 
+  lam <- fit$lambda[1L]
   expect_warning(
-    sigma_r <- lassoboot:::.sigma_refit(fit, x, y),
+    sigma_r <- lassoboot:::.sigma_refit(fit, x, y, lam),
     "No predictors selected"
   )
   expect_gt(sigma_r, 0)

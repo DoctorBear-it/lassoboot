@@ -21,6 +21,13 @@ library(lassoboot)
 library(dplyr)
 ```
 
+> **Upgrading from v0.1?** Column names in `tidy()` output changed in v0.2.0:
+> `estimate` → `mean`, `conf.low`/`conf.high` → `q025`/`q975`,
+> `std.error` → `sd`. The `conf.level` argument is now `probs = c(0.025, 0.975)`.
+> Use `lb_filter_stable()` instead of `lb_is_significant()`.
+> See `vignette("migration-to-v020")` for the full API rename table, and
+> `vignette("methodological-foundations")` for the v0.2.0 conceptual framing.
+
 ## Building the concrete dataset model
 
 We will work through a complete example using the bundled `concrete` dataset —
@@ -53,7 +60,7 @@ and three complementary diagnostics:
 
 ```{r tidy}
 td <- tidy(boot)
-select(td, term, estimate, conf.low, conf.high, selection_prob, stability_score) |>
+select(td, term, mean, q025, q975, selection_prob, stability_score) |>
   arrange(desc(selection_prob))
 ```
 
@@ -126,8 +133,8 @@ coefficient by `2 * sd(predictor)`, placing all numeric predictors on a
 
 ```{r gelman}
 tidy(boot, scale = "gelman") |>
-  select(term, estimate, conf.low, conf.high, selection_prob) |>
-  arrange(desc(abs(estimate)))
+  select(term, mean, q025, q975, selection_prob) |>
+  arrange(desc(abs(mean)))
 ```
 
 A coefficient of 0.15 on this scale means: changing the predictor from its
@@ -189,6 +196,55 @@ grid <- lb_grid(boot, focal = "clayHOH", n = 60, at = "observed")
 **Extrapolation warning.** `lb_grid()` clips grid values to the observed range
 by default. Pass `extrapolate = TRUE` to extend beyond the data; mark any
 extrapolated region clearly in the final plot.
+
+## Confidence bands vs. prediction bands
+
+`lb_grid()` and `lb_plot_prediction()` support two types of uncertainty
+interval for the fitted response, selected with the `interval` argument.
+
+**Confidence band** (`interval = "confidence"`, the default): captures
+uncertainty in the *mean response* — how precisely the regression surface is
+estimated from the data. It reflects only variability in the bootstrap
+coefficient estimates. Confidence bands narrow as *n* grows and the model
+becomes better determined, but they do **not** account for the scatter of
+individual observations around the trend.
+
+**Prediction band** (`interval = "prediction"`): answers the question *where
+will a new individual measurement fall?* It adds the residual scatter *σ̂*
+(estimated inside `lb_bootstrap()`) on top of the confidence envelope. A new
+observation drawn from the same process will fall outside the prediction band
+only with probability equal to the nominal level — regardless of sample size.
+
+```{r bands-compare, eval = FALSE}
+# Confidence band: uncertainty in the mean trend
+lb_plot_prediction(boot, focal = "clayHOH", n = 60, interval = "confidence")
+
+# Prediction band: where a new data point will fall
+lb_plot_prediction(boot, focal = "clayHOH", n = 60, interval = "prediction")
+```
+
+The additional width of the prediction band over the confidence band is
+approximately `σ̂ × √(1 + 1/n)` at the median predictor values. When the
+model is well-determined (large *n*, high selection probability) but has
+genuine residual scatter (e.g. between-batch variation in cement production),
+prediction bands can be substantially wider than confidence bands. That
+difference is the honest answer to "how repeatable is a new test?"
+
+`lb_plot_envelopes()` (new in v0.2.0) plots both simultaneously: a wider,
+lower-opacity prediction ribbon behind a narrower confidence ribbon. Use
+`interval = "both"` to activate this overlay:
+
+```{r envelopes-both, eval = FALSE}
+lb_plot_envelopes(boot, focal = "clayHOH", interval = "both", n = 60)
+```
+
+**Practical guidance:**
+
+| Plotting goal | Recommended interval |
+|---|---|
+| "How well do we know the mean trend?" | `"confidence"` |
+| "Where will a new measurement fall?" | `"prediction"` |
+| Communicate both to a broad audience | `"both"` in `lb_plot_envelopes()` |
 
 ## Nested cross-validation: `lb_folds_nested()`
 

@@ -81,13 +81,20 @@ test_that("lb_plot_coefficients has GeomLinerange, GeomPoint, GeomVline", {
   expect_true(all(c("GeomLinerange", "GeomPoint", "GeomVline") %in% geom_classes))
 })
 
-test_that("lb_plot_coefficients filter='significant' returns <= nrow(filter='all')", {
+test_that("lb_plot_coefficients filter='quantiles_exclude_zero' returns <= nrow(filter='all')", {
   boot   <- make_plot_boot()
   p_all  <- lb_plot_coefficients(boot, filter = "all")
-  p_sig  <- lb_plot_coefficients(boot, filter = "significant")
+  p_qez  <- suppressWarnings(
+    lb_plot_coefficients(boot, filter = "quantiles_exclude_zero")
+  )
   n_all  <- nrow(p_all$data)
-  n_sig  <- nrow(p_sig$data)
-  expect_lte(n_sig, n_all)
+  n_qez  <- nrow(p_qez$data)
+  expect_lte(n_qez, n_all)
+})
+
+test_that("lb_plot_coefficients filter='significant' emits deprecation warning", {
+  boot <- make_plot_boot()
+  expect_warning(lb_plot_coefficients(boot, filter = "significant"), "deprecated")
 })
 
 test_that("lb_plot_coefficients filter='selected' returns <= nrow(filter='all')", {
@@ -103,7 +110,7 @@ test_that("lb_plot_coefficients scale='gelman' differs from scale='raw'", {
   boot   <- make_plot_boot()
   p_raw  <- lb_plot_coefficients(boot, scale = "raw")
   p_gel  <- lb_plot_coefficients(boot, scale = "gelman")
-  expect_false(isTRUE(all.equal(p_raw$data$estimate, p_gel$data$estimate)))
+  expect_false(isTRUE(all.equal(p_raw$data$mean, p_gel$data$mean)))
 })
 
 test_that("lb_plot_coefficients vdiffr: canonical", {

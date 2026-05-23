@@ -9,11 +9,12 @@ lb_uncertainty(...)
 \arguments{
 \item{...}{Named arguments \code{column = std(value)}, \code{column = cov(value)}, or
 \code{column = rel(value)}. Alternatively, a single pre-built tibble with
-columns \code{term}, \code{type}, \code{value}, and optionally \code{source}.}
+columns \code{term}, \code{type}, and either \code{value} (backfilled for single/multi)
+or \code{value_single} and \code{value_multi}.}
 }
 \value{
 A tibble with columns \code{term} (chr), \code{type} (chr: \code{"std"/"cov"/"rel"}),
-\code{value} (dbl, >= 0), \code{source} (chr).
+\code{value_single} (dbl, >= 0), \code{value_multi} (dbl, >= 0), \code{source} (chr).
 }
 \description{
 Builds a tidy tibble declaring the measurement uncertainty on predictor
@@ -25,12 +26,13 @@ inside the call.
 
 Inside \code{lb_uncertainty(...)} calls, three short helpers are available:
 \itemize{
-\item \code{std(value, source)} — absolute standard deviation in the units of the
-column.
-\item \code{cov(value, source)} — coefficient of variation as a \strong{percentage}
-(\code{cov(4.0, ...)} means 4\%, not 400\%).
-\item \code{rel(value, source)} — relative standard deviation as a \strong{fraction}
-(\code{rel(0.04, ...)} is equivalent to \code{cov(4.0, ...)}).
+\item \code{std(value, multi = NULL, source)} — absolute standard deviation in the
+units of the column. \code{value} is the single-operator (within-lab) precision;
+\code{multi} (optional) is the multi-laboratory reproducibility.
+\item \code{cov(value, multi = NULL, source)} — coefficient of variation as a
+\strong{percentage} (\code{cov(4.0, ...)} means 4\%, not 400\%).
+\item \code{rel(value, multi = NULL, source)} — relative standard deviation as a
+\strong{fraction} (\code{rel(0.04, ...)} is equivalent to \code{cov(4.0, ...)}).
 }
 
 These helpers are \strong{only available inside \code{lb_uncertainty()}} — they do not
@@ -39,11 +41,34 @@ other function globally. Internally, \code{lb_uncertainty()} evaluates its
 arguments in a child environment that defines \code{std}, \code{cov}, and \code{rel};
 outside that call, the names resolve normally.
 }
+
+\subsection{Multi-laboratory precision}{
+
+Supply the named \code{multi} argument to declare two precision levels:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{lb_uncertainty(
+  alumina = std(0.071, multi = 0.213, source = "ASTM C114")
+)
+}\if{html}{\out{</div>}}
+
+Switch between levels with \code{lb_control(precision = "single")} (default) or
+\code{lb_control(precision = "multi")}.
+
+v0.1 calls like \code{std(0.071, "ASTM C114")} continue to work unchanged
+and set \code{multi = single = 0.071}.
+}
 }
 \examples{
+# Single precision level (v0.1 compatible)
 lb_uncertainty(
   alumina  = std(0.071, "ASTM C114"),
   SSA      = cov(0.56,  "Mfr certificate of analysis"),
-  strength = cov(4.0,   "ASTM C109 §10.3 single-operator")
+  strength = cov(4.0,   "ASTM C109 single-operator")
+)
+
+# Two precision levels (v0.2.0+)
+lb_uncertainty(
+  alumina  = std(0.071, multi = 0.213, source = "ASTM C114"),
+  strength = cov(4.0,   multi = 7.8,   source = "ASTM C109")
 )
 }

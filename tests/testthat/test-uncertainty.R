@@ -8,8 +8,27 @@ test_that("lb_uncertainty() builds a tibble from std/cov/rel helpers", {
   expect_equal(nrow(u), 3L)
   expect_equal(u$term,  c("alumina", "SSA", "strength"))
   expect_equal(u$type,  c("std", "cov", "rel"))
-  expect_equal(u$value, c(0.071, 0.56, 0.04))
+  # v0.2.0: value column split into value_single and value_multi
+  expect_equal(u$value_single, c(0.071, 0.56, 0.04))
+  expect_equal(u$value_multi,  c(0.071, 0.56, 0.04))  # same when not specified
   expect_equal(u$source, c("ASTM C114", "Mfr CoA", "lab"))
+})
+
+test_that("lb_uncertainty() supports multi precision with named multi argument", {
+  u <- lb_uncertainty(
+    alumina = std(0.071, multi = 0.213, source = "ASTM C114"),
+    SSA     = cov(0.56,  multi = 1.68,  source = "Mfr CoA")
+  )
+  expect_equal(u$value_single, c(0.071, 0.56))
+  expect_equal(u$value_multi,  c(0.213, 1.68))
+})
+
+test_that("lb_uncertainty() v0.1 positional source call still works", {
+  # std(0.071, "ASTM C114") must bind "ASTM C114" to source, not multi
+  u <- lb_uncertainty(alumina = std(0.071, "ASTM C114"))
+  expect_equal(u$value_single, 0.071)
+  expect_equal(u$value_multi,  0.071)
+  expect_equal(u$source, "ASTM C114")
 })
 
 test_that("lb_uncertainty() accepts omitted source (defaults to NA)", {
@@ -33,10 +52,13 @@ test_that("lb_uncertainty() errors on NA value", {
   expect_error(lb_uncertainty(x = std(NA_real_)), class = "rlang_error")
 })
 
-test_that("lb_uncertainty() accepts a pre-built tibble", {
+test_that("lb_uncertainty() accepts a pre-built tibble with old-style value column", {
   tbl <- tibble::tibble(term = "x", type = "std", value = 1.0, source = NA_character_)
   u   <- lb_uncertainty(tbl)
   expect_equal(u$term, "x")
+  # v0.2.0: value is backfilled into value_single/value_multi
+  expect_equal(u$value_single, 1.0)
+  expect_equal(u$value_multi,  1.0)
 })
 
 test_that("lb_uncertainty() rejects pre-built tibble with bad type", {

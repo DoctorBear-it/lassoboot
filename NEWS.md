@@ -1,3 +1,72 @@
+# lassoboot 0.2.0
+
+## Breaking changes
+
+* `tidy()` column names have changed — there is no backward-compatibility
+  aliasing. Update all code that references old names:
+  - `estimate` → `mean`
+  - `estimate_median` → `median`
+  - `std.error` → `sd`
+  - `conf.low` → `q025` (or `q` + quantile × 1000, zero-padded to 3 digits)
+  - `conf.high` → `q975`
+* `tidy()` argument `conf.level` replaced by `probs` (a numeric vector of
+  quantile probabilities, e.g. `probs = c(0.025, 0.975)`).
+
+## New features
+
+* **Prediction intervals.** `predict.lb_boot()`, `lb_grid()`,
+  `lb_plot_prediction()`, and the new `lb_plot_envelopes()` all accept
+  `interval = "confidence"` (bootstrap quantile envelope around the mean
+  response, the default) or `interval = "prediction"` (adds residual scatter
+  ε ~ N(0, σ̂²) to each bootstrap draw). The sigma used for prediction draws
+  is stored per-iteration as `boot$sigma_hats`.
+
+* **`lb_plot_envelopes()`.** New high-level plotting function for prediction
+  envelopes. Supports `group`, `facet`, `hlines`, `xlim`/`ylim`, and
+  `interval = "both"` for overlaid confidence + prediction ribbons. Maps the
+  `group` variable to color, fill, and linetype simultaneously.
+
+* **Dual precision levels in `lb_uncertainty()`.** Each uncertainty entry now
+  carries `value_single` (within-lab) and `value_multi` (between-lab)
+  columns. Declare both via `std(value, multi = ..., source = ...)`. Legacy
+  single-column `value` tibbles are automatically backfilled and remain
+  fully compatible. Select the active level with `lb_control(precision = ...)`.
+
+* **`lb_control(precision = ...)`.** New argument (`"single"` or `"multi"`,
+  default `"single"`) routes the bootstrap to within-lab or between-lab
+  uncertainty values declared in `lb_uncertainty()`.
+
+* **`lb_normalize()` exported.** Previously internal; now exported with full
+  documentation. Registers a ratio response (measured / reference) and
+  rewrites the formula LHS so that each bootstrap iteration correctly
+  propagates uncertainty through the ratio.
+
+* **`lb_filter_stable()`.** New primary API for filtering `tidy()` output.
+  Accepts `min_selection_prob`, `min_stability_score`, and
+  `quantiles_exclude_zero` (any combination, AND-ed). Replaces
+  `lb_is_significant()`, which is retained as a deprecated wrapper.
+
+* **`lb_is_significant()` deprecated.** Use `lb_filter_stable()` instead.
+  The old function still works but emits a one-time deprecation warning.
+
+* **New vignette: `methodological-foundations`.** Covers the v0.2.0
+  conceptual reframe (prediction envelopes vs. parameter inference), the full
+  column-rename migration table, the `probs` / `lb_filter_stable()` API, dual
+  precision levels, and the confidence vs. prediction band taxonomy.
+
+## Bug fixes and improvements
+
+* `lb_normalize()` now materializes the response column on `spec$data` before
+  registering the derive, fixing a subtle evaluation-order bug when the
+  response column did not yet exist in the data frame.
+* `.estimate_sigma()` gains an explicit `lambda` argument; per-iteration
+  sigma estimates are now stored as `boot$sigma_hats` (length-*B* numeric
+  vector) and used when constructing prediction intervals.
+* `lb_plot_coefficients()`: axis label updated from "Bootstrap coefficient
+  estimate" to "Bootstrap coefficient (mean)"; the `filter` argument now
+  accepts `"quantiles_exclude_zero"` as the preferred name for what was
+  previously `"significant"`.
+
 # lassoboot 0.1.0
 
 First CRAN release.

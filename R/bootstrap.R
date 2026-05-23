@@ -118,6 +118,9 @@ lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
   path_coefs <- if (control$store_path) lapply(results, `[[`, "path_coefs") else NULL
   models     <- if (control$keep_models) lapply(results, `[[`, "model") else NULL
 
+  # Per-iteration sigma_hat: used by predict.lb_boot(interval = "prediction")
+  sigma_hats <- vapply(results, `[[`, numeric(1L), "sigma_hat")
+
   structure(
     list(
       fit         = fit,
@@ -125,6 +128,7 @@ lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
       B           = B,
       path_coefs  = path_coefs,
       models      = models,
+      sigma_hats  = sigma_hats,
       seed_used   = seed_used,
       elapsed_sec = elapsed_sec
     ),
@@ -134,11 +138,13 @@ lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
 
 # Internal worker: one bootstrap iteration.
 .boot_iter <- function(b, fit, engine, control) {
-  spec <- fit$spec
-  data <- spec$data
+  spec     <- fit$spec
+  data     <- spec$data
+  foldid_b <- NULL  # initialised here; overwritten below when fix_lambda = FALSE
 
   # 1. Perturb predictors with declared measurement uncertainty
-  data_b <- .apply_uncertainty(data, spec$uncertainty)
+  data_b <- .apply_uncertainty(data, spec$uncertainty,
+                               precision = control$precision)
 
   # 2. Clip perturbed values to declared (or inferred) bounds
   data_b <- .apply_constraints(data_b, spec$constraints)
@@ -192,20 +198,43 @@ lb_bootstrap <- function(spec_or_fit, B = 1000, ...) {
 
   model_b <- if (control$keep_models) fit_b else NULL
 
-  list(coefs = coefs_b, path_coefs = path_coefs_b, model = model_b)
+  # Compute per-iteration sigma_hat for use by predict(interval = "prediction").
+  # foldid_b is NULL when fix_lambda = TRUE (no CV was run for lambda selection).
+  sigma_hat_b  <- .estimate_sigma(
+    fit_obj = fit_b,
+    x       = x_b,
+    y       = y_star,
+    method  = control$sigma_method,
+    lambda  = lambda_b,
+    foldid  = foldid_b
+  )
+
+  list(coefs      = coefs_b,
+       path_coefs = path_coefs_b,
+       model      = model_b,
+       sigma_hat  = sigma_hat_b)
 }
 
 # Internal: perturb numeric predictor columns according to the uncertainty spec.
+# `precision` selects between "single" (value_single) and "multi" (value_multi).
 # Scale is computed from the *original* column value, not from the accumulating
 # data, so repeated uncertainty rows targeting the same column do not drift.
-.apply_uncertainty <- function(data, uncertainty) {
+.apply_uncertainty <- function(data, uncertainty, precision = "single") {
   if (is.null(uncertainty) || nrow(uncertainty) == 0L) return(data)
+
+  # Select the active value column based on precision level.
+  # Support both old-style (value) and new-style (value_single / value_multi).
+  value_col <- if ("value_single" %in% names(uncertainty)) {
+    paste0("value_", precision)
+  } else {
+    "value"
+  }
 
   n <- nrow(data)
   for (i in seq_len(nrow(uncertainty))) {
     term         <- uncertainty$term[i]
     type         <- uncertainty$type[i]
-    value        <- uncertainty$value[i]
+    value        <- uncertainty[[value_col]][i]
     original_col <- data[[term]]
 
     noise <- switch(type,
